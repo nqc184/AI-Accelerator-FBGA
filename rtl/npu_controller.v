@@ -134,7 +134,7 @@ module npu_controller (
             IMPLEMENT: begin
 
                 if (calc_done) begin
-                    if (last_window_hold)      
+                    if (last_window_hold)     
                         next_state = DONE;
                     else
                         next_state = PRE_IMPLEMENT;
