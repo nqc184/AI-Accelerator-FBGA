@@ -18,7 +18,7 @@ module tb_pe;
     integer pass_count;
     integer fail_count;
 
-    pe dut (
+    pe dut(
         .clk(clk),
         .reset(reset),
         .clear(clear),
@@ -82,7 +82,9 @@ module tb_pe;
 
     endtask
 
-    task automatic clear_accumulator;
+    task automatic clear_test(
+        input string name
+    );
 
         begin
             clear = 1'b1;
@@ -92,124 +94,6 @@ module tb_pe;
             #1;
 
             clear = 1'b0;
-
-            @(posedge clk);
-            #1;
-        end
-
-    endtask
-
-    task automatic mac_test(
-        input string name,
-        input logic [15:0] a_in,
-        input logic [15:0] b_in,
-        input logic [15:0] expected_acc
-    );
-
-        begin
-            in_a = a_in;
-            in_b = b_in;
-            valid_in = 1'b1;
-
-            @(posedge clk);
-            #1;
-
-            if ((out_c === expected_acc) &&
-                (out_a === a_in) &&
-                (out_b === b_in) &&
-                (valid_out === 1'b1)) begin
-
-                pass_count = pass_count + 1;
-
-                $display(
-                    "PASS | %-25s | A=%h(%f) | B=%h(%f) | ACC=%h(%f) | VALID=%b",
-                    name,
-                    in_a,
-                    fp16_to_real(in_a),
-                    in_b,
-                    fp16_to_real(in_b),
-                    out_c,
-                    fp16_to_real(out_c),
-                    valid_out
-                );
-
-            end
-            else begin
-
-                fail_count = fail_count + 1;
-
-                $display(
-                    "FAIL | %-25s | A=%h | B=%h | ACC=%h | EXPECTED=%h | VALID=%b",
-                    name,
-                    in_a,
-                    in_b,
-                    out_c,
-                    expected_acc,
-                    valid_out
-                );
-
-            end
-
-            valid_in = 1'b0;
-
-        end
-
-    endtask
-
-    task automatic invalid_test(
-        input string name,
-        input logic [15:0] a_in,
-        input logic [15:0] b_in,
-        input logic [15:0] expected_acc
-    );
-
-        begin
-            in_a = a_in;
-            in_b = b_in;
-            valid_in = 1'b0;
-
-            @(posedge clk);
-            #1;
-
-            if ((out_c === expected_acc) &&
-                (valid_out === 1'b0)) begin
-
-                pass_count = pass_count + 1;
-
-                $display(
-                    "PASS | %-25s | ACC=%h(%f) | VALID=%b",
-                    name,
-                    out_c,
-                    fp16_to_real(out_c),
-                    valid_out
-                );
-
-            end
-            else begin
-
-                fail_count = fail_count + 1;
-
-                $display(
-                    "FAIL | %-25s | ACC=%h | EXPECTED=%h | VALID=%b",
-                    name,
-                    out_c,
-                    expected_acc,
-                    valid_out
-                );
-
-            end
-
-        end
-
-    endtask
-
-    task automatic clear_test(
-        input string name
-    );
-
-        begin
-            clear = 1'b1;
-            valid_in = 1'b0;
 
             @(posedge clk);
             #1;
@@ -239,8 +123,125 @@ module tb_pe;
                 );
 
             end
+        end
 
-            clear = 1'b0;
+    endtask
+
+    task automatic mac_test(
+        input string name,
+        input logic [15:0] a_in,
+        input logic [15:0] b_in,
+        input logic [15:0] expected_acc
+    );
+
+        begin
+
+            in_a = a_in;
+            in_b = b_in;
+            valid_in = 1'b1;
+
+            @(posedge clk);
+            #1;
+
+            valid_in = 1'b0;
+
+            @(posedge clk);
+            #1;
+
+            if ((out_c === expected_acc) &&
+                (out_a === a_in) &&
+                (out_b === b_in) &&
+                (valid_out === 1'b1)) begin
+
+                pass_count = pass_count + 1;
+
+                $display(
+                    "PASS | %-25s | A=%h(%f) | B=%h(%f) | ACC=%h(%f) | VALID=%b",
+                    name,
+                    a_in,
+                    fp16_to_real(a_in),
+                    b_in,
+                    fp16_to_real(b_in),
+                    out_c,
+                    fp16_to_real(out_c),
+                    valid_out
+                );
+
+            end
+            else begin
+
+                fail_count = fail_count + 1;
+
+                $display(
+                    "FAIL | %-25s | A=%h(%f) | B=%h(%f) | ACC=%h(%f) | EXPECTED=%h(%f) | VALID=%b",
+                    name,
+                    a_in,
+                    fp16_to_real(a_in),
+                    b_in,
+                    fp16_to_real(b_in),
+                    out_c,
+                    fp16_to_real(out_c),
+                    expected_acc,
+                    fp16_to_real(expected_acc),
+                    valid_out
+                );
+
+            end
+
+        end
+
+    endtask
+
+    task automatic invalid_test(
+        input string name,
+        input logic [15:0] a_in,
+        input logic [15:0] b_in,
+        input logic [15:0] expected_acc
+    );
+
+        begin
+
+            in_a = a_in;
+            in_b = b_in;
+            valid_in = 1'b0;
+
+            @(posedge clk);
+            #1;
+
+            @(posedge clk);
+            #1;
+
+            if ((out_c === expected_acc) &&
+                (valid_out === 1'b0)) begin
+
+                pass_count = pass_count + 1;
+
+                $display(
+                    "PASS | %-25s | A=%h | B=%h | ACC=%h(%f) | VALID=%b",
+                    name,
+                    a_in,
+                    b_in,
+                    out_c,
+                    fp16_to_real(out_c),
+                    valid_out
+                );
+
+            end
+            else begin
+
+                fail_count = fail_count + 1;
+
+                $display(
+                    "FAIL | %-25s | A=%h | B=%h | ACC=%h | EXPECTED=%h | VALID=%b",
+                    name,
+                    a_in,
+                    b_in,
+                    out_c,
+                    expected_acc,
+                    valid_out
+                );
+
+            end
 
         end
 
@@ -260,7 +261,7 @@ module tb_pe;
 
         $display("");
         $display("==============================================================");
-        $display("                       FP16 PE TESTBENCH");
+        $display("                     FP16 PE TESTBENCH");
         $display("==============================================================");
         $display("");
 
