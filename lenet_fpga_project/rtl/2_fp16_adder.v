@@ -24,9 +24,9 @@ module fp16_adder(
     reg [10:0] mant_large;
     reg [10:0] mant_small;
 
-    reg [14:0] mant_large_ext;
-    reg [14:0] mant_small_ext;
-    reg [14:0] mant_result;
+    reg [15:0] mant_large_ext;
+    reg [15:0] mant_small_ext;
+    reg [15:0] mant_result;
 
     reg [4:0] exp_large;
     reg [4:0] exp_small;
@@ -61,9 +61,9 @@ module fp16_adder(
         mant_large = 11'd0;
         mant_small = 11'd0;
 
-        mant_large_ext = 15'd0;
-        mant_small_ext = 15'd0;
-        mant_result = 15'd0;
+        mant_large_ext = 16'd0;
+        mant_small_ext = 16'd0;
+        mant_result = 16'd0;
 
         exp_large = 5'd0;
         exp_small = 5'd0;
@@ -82,7 +82,6 @@ module fp16_adder(
             result = a;
         end
         else begin
-
             if (exp_a > exp_b) begin
                 exp_large = exp_a;
                 exp_small = exp_b;
@@ -119,7 +118,7 @@ module fp16_adder(
             mant_small_ext = {mant_small,4'b0000};
 
             if (exp_diff >= 5'd15) begin
-                mant_small_ext = 15'd0;
+                mant_small_ext = 16'd0;
             end
             else begin
                 for (i = 0; i < 15; i = i + 1) begin
@@ -135,20 +134,19 @@ module fp16_adder(
                 mant_result = mant_large_ext - mant_small_ext;
             end
 
-            if (mant_result == 15'd0) begin
+            if (mant_result == 16'd0) begin
                 result = 16'd0;
             end
             else begin
-
                 exp_result = exp_large;
 
-                if (mant_result[14]) begin
+                if (mant_result[15]) begin
                     mant_result = mant_result >> 1;
                     exp_result = exp_result + 1'b1;
                 end
                 else begin
                     for (i = 0; i < 14; i = i + 1) begin
-                        if ((mant_result[13] == 1'b0) &&
+                        if ((mant_result[14] == 1'b0) &&
                             (exp_result > 0)) begin
                             mant_result = mant_result << 1;
                             exp_result = exp_result - 1'b1;
@@ -164,14 +162,10 @@ module fp16_adder(
 
                 if (guard_bit &&
                     (round_bit || sticky_bit || frac_result[0])) begin
-
                     mant_round = {1'b0,frac_result} + 11'd1;
-
                 end
                 else begin
-
                     mant_round = {1'b0,frac_result};
-
                 end
 
                 if (mant_round[10]) begin
@@ -187,7 +181,6 @@ module fp16_adder(
                     exp_result,
                     frac_result
                 };
-
             end
         end
     end
