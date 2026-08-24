@@ -5,15 +5,19 @@
 module tb_pe;
     logic clk, rst, clr;
     logic en;
+    logic en_out;
+    logic clr_out;
     logic signed [`N-1:0] pixel, weight;
     logic signed [`N-1:0] pixel_out, weight_out;
     logic signed [`ACC-1:0] acc;
 
-    pe #(.N(), .ACC()) uut(
+    pe #(.N(`N), .ACC(`ACC)) uut(
         .clk(clk), .rst(rst), .clr(clr),
         .en(en),
+        .en_out(en_out),
+        .clr_out(clr_out),
         .pixel(pixel), .weight(weight),
-        .pixel_out(pixel), .weight_out(weight),
+        .pixel_out(pixel_out), .weight_out(weight_out),
         .acc(acc)
     );
 
@@ -69,6 +73,7 @@ module tb_pe;
     endtask
 
      initial begin
+        clk = 0;
         rst = 1; clr = 0; en = 0;
         pixel = 0; weight = 0;
         errors = 0;
@@ -107,5 +112,9 @@ module tb_pe;
             $display("FAIL: %0d test case sai", errors);
  
         $finish;
+    end
+
+    initial begin 
+        $dumpfile("dump.vcd"); $dumpvars;
     end
 endmodule
