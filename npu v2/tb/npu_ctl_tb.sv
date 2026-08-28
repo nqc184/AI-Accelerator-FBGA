@@ -1,6 +1,7 @@
 `timescale 1ns/1ps
 module npu_ctl_tb;
     logic clk, rst;
+    logic [2:0] state_out;
     logic start_config, start_compute;
 
     logic start_config_pixel_buffer_loader;
@@ -15,6 +16,7 @@ module npu_ctl_tb;
 
     npu_controller uut(
         .clk(clk), .rst(rst), 
+        .state_out(state_out),
         .start_config(start_config), .start_compute(start_compute),
 
         .start_config_pixel_buffer_loader(start_config_pixel_buffer_loader),
