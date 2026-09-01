@@ -20,6 +20,64 @@ module top #(
         .start_npu()
     );
 
+    //Memory Controller
+    memory_controller #(
+        .DATA_WIDTH(DATA_WIDTH),
+        .IFM_ADDR_WIDTH(14),
+        .WGT_ADDR_WIDTH(10),
+        .BIAS_ADDR_WIDTH(10),
+        .OUT_ADDR_WIDTH(10)
+    ) memory_controller_inst (
+        .clk(clk),
+        .rst(rst),
+        .start_load(),
+
+        .ifm_tdata(),
+        .ifm_tvalid(),
+        .ifm_tlast(),
+        .ifm_tready(),
+
+        .wgt_tdata(),
+        .wgt_tvalid(),
+        .wgt_tlast(),
+        .wgt_tready(),
+
+        .bias_tdata(),
+        .bias_tvalid(),
+        .bias_tlast(),
+        .bias_tready(),
+
+        .ifm_wr_en(),
+        .ifm_wr_addr(),
+        .ifm_wr_data(),
+
+        .wgt_wr_en(),
+        .wgt_wr_addr(),
+        .wgt_wr_data(),
+
+        .bias_wr_en(),
+        .bias_wr_addr(),
+        .bias_wr_data(),
+
+        .ifm_done(),
+        .wgt_done(),
+        .bias_done(),
+
+        .npu_out_data(),
+        .npu_out_valid(),
+        .npu_out_last(),
+        .compute_done(),
+
+        .npu_out_ready(),
+
+        .out_wr_en(),
+        .out_wr_addr(),
+        .out_wr_data(),
+
+        .done_load_in(),
+        .done_load_out()
+    );
+
     //Input Buffer
     buffer #(
         .DW(DATA_WIDTH),
