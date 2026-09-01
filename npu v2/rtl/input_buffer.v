@@ -1,5 +1,5 @@
 `timescale 1ns / 1ps
-module ifm_buffer #(
+module buffer #(
     parameter DW         = 24,
     parameter IMG_SIZE   = 16384,
     parameter DEPTH       = (IMG_SIZE + 4) / 5,  
@@ -12,7 +12,7 @@ module ifm_buffer #(
     input  wire         write_enable,   
     input  wire [127:0] write_data,    
     input  wire         write_last,   
-    output reg           ifm_done,       
+    output reg           done,       
  
     input  wire read_enable,                  
     output reg  signed [DW-1:0] read_data,       
@@ -38,7 +38,7 @@ module ifm_buffer #(
     always @(posedge clk) begin
         if (rst) begin
             wr_addr  <= 0;
-            ifm_done <= 1'b0;
+            done <= 1'b0;
         end
         else begin
             if (write_enable) begin
@@ -52,7 +52,7 @@ module ifm_buffer #(
                 wr_addr <= wr_addr + 1'b1;
  
                 if (write_last)
-                    ifm_done <= 1'b1;
+                    done <= 1'b1;
             end
         end
     end
