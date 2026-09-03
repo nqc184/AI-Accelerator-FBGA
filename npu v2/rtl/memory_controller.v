@@ -106,10 +106,10 @@ module memory_controller #(
                 if (ifm_tlast) begin
                     ifm_done     <= 1'b1;
                     ifm_finished <= 1'b1;
-                    ifm_busy     <= 1'b0;  
+                    ifm_busy     <= 1'b0;   
                 end
             end
- 
+
             if (wgt_tvalid && wgt_tready) begin
                 wgt_wr_en   <= 1'b1;
                 wgt_wr_data <= wgt_tdata;
