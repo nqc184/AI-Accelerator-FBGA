@@ -1,5 +1,3 @@
-`timescale 1ns/1ps
-
 module axi_stream_source_tb #(
     parameter int DATA_WIDTH = 24,
     parameter int MEM_DEPTH  = 16384,
@@ -29,21 +27,35 @@ module axi_stream_source_tb #(
     initial begin
         $readmemh(FILE_NAME, mem);
     end
- 
+
     task automatic pack_beat(input logic [ADDR_WIDTH-1:0] base_idx);
         logic [4:0] mask;
+        int valid_count;
+        int invalid_count;
+ 
+        if (base_idx >= MEM_DEPTH)
+            valid_count = 0;
+        else if (MEM_DEPTH - base_idx >= 5)
+            valid_count = 5;
+        else
+            valid_count = MEM_DEPTH - base_idx;
+ 
+        invalid_count = 5 - valid_count; 
+ 
         mask = 5'b00000;
         for (int k = 0; k < 5; k++) begin
-            if (base_idx + k < MEM_DEPTH)
-                mask[4-k] = 1'b1;
+            if (k >= invalid_count)
+                mask[4-k] = 1'b1; 
         end
  
         m_axis_tdata[127:125] <= 3'b000;
         m_axis_tdata[124:120] <= mask;
  
         for (int k = 0; k < 5; k++) begin
-            if (base_idx + k < MEM_DEPTH)
-                m_axis_tdata[119-DATA_WIDTH*k -: DATA_WIDTH] <= mem[base_idx + k];
+            if (k >= invalid_count) begin
+                automatic int j = k - invalid_count;
+                m_axis_tdata[119-DATA_WIDTH*k -: DATA_WIDTH] <= mem[base_idx + (valid_count-1-j)];
+            end
             else
                 m_axis_tdata[119-DATA_WIDTH*k -: DATA_WIDTH] <= '0;
         end
