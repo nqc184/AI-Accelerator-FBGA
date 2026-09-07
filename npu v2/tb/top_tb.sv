@@ -2,9 +2,12 @@
 `define DATA_WIDTH 24
 `define AXI_BURST 128
 `define IMG_SIZE 16384
-`define BUFFER_DEPTH (`IMG_SIZE + 4) / 5
-`define BUFFER_ADDR_WIDTH  12                   
-`define BUFFER_CNT_WIDTH 14  
+`define WGT_SIZE 150
+`define BIAS_SIZE 6
+`define IFM_ADDR_WIDTH  14
+`define WGT_ADDR_WIDTH  8
+`define BIAS_ADDR_WIDTH 4
+
 module top_tb();
     logic clk;
     logic rst;
@@ -17,29 +20,49 @@ module top_tb();
     logic ifm_tvalid;
     logic ifm_tlast;
     logic ifm_tready;
-    logic [`AXI_BURST-1:0] ifm_wr_data_monitor; 
+    logic ifm_unpack_en_monitor;
+    logic [`IFM_ADDR_WIDTH-1:0] ifm_unpack_wr_addr_monitor;
+    logic [`DATA_WIDTH-1:0] ifm_unpack_data_monitor;
 
     // AXI Stream WGT
     logic [`AXI_BURST-1:0] wgt_tdata;
     logic wgt_tvalid;
     logic wgt_tlast;
     logic wgt_tready;
-    logic [`AXI_BURST-1:0] wgt_wr_data_monitor;
+    logic wgt_unpack_en_monitor;
+    logic [`WGT_ADDR_WIDTH-1:0] wgt_unpack_wr_addr_monitor;
+    logic [`DATA_WIDTH-1:0] wgt_unpack_data_monitor;
 
     // AXI Stream BIAS
     logic [`AXI_BURST-1:0] bias_tdata;
     logic bias_tvalid;
     logic bias_tlast;
     logic bias_tready;
-    logic [`AXI_BURST-1:0] bias_wr_data_monitor;
+    logic bias_unpack_en_monitor;
+    logic [`BIAS_ADDR_WIDTH-1:0] bias_unpack_wr_addr_monitor;
+    logic [`DATA_WIDTH-1:0] bias_unpack_data_monitor;
+
+    logic rd_en_pixel;
+    logic [`IFM_ADDR_WIDTH-1:0] rd_addr_pixel;
+    logic [`DATA_WIDTH-1:0] rd_data_pixel_monitor;
+
+    logic rd_en_wgt;
+    logic [`WGT_ADDR_WIDTH-1:0] rd_addr_wgt;
+    logic [`DATA_WIDTH-1:0] rd_data_wgt_monitor;
+
+    logic rd_en_bias;
+    logic [`BIAS_ADDR_WIDTH-1:0] rd_addr_bias;
+    logic [`DATA_WIDTH-1:0] rd_data_bias_monitor;
 
     top #(
         .DATA_WIDTH(`DATA_WIDTH),
         .AXI_BURST(`AXI_BURST),
         .IMG_SIZE(`IMG_SIZE),
-        .BUFFER_DEPTH(`BUFFER_DEPTH),
-        .BUFFER_ADDR_WIDTH(`BUFFER_ADDR_WIDTH),
-        .BUFFER_CNT_WIDTH(`BUFFER_CNT_WIDTH)
+        .WGT_SIZE(`WGT_SIZE),
+        .BIAS_SIZE(`BIAS_SIZE),
+        .IFM_ADDR_WIDTH(`IFM_ADDR_WIDTH),
+        .WGT_ADDR_WIDTH(`WGT_ADDR_WIDTH),
+        .BIAS_ADDR_WIDTH(`BIAS_ADDR_WIDTH)
     ) top_inst (
         .clk(clk),
         .rst(rst),
@@ -51,33 +74,48 @@ module top_tb();
         .wgt_done_monitor(wgt_done_monitor),
         .bias_done_monitor(bias_done_monitor),
 
-        // AXI Stream IFM
         .ifm_tdata(ifm_tdata),
         .ifm_tvalid(ifm_tvalid),
         .ifm_tlast(ifm_tlast),
         .ifm_tready(ifm_tready),
-        .ifm_wr_data_monitor(ifm_wr_data_monitor),
+        .ifm_unpack_en_monitor(ifm_unpack_en_monitor),
+        .ifm_unpack_wr_addr_monitor(ifm_unpack_wr_addr_monitor),
+        .ifm_unpack_data_monitor(ifm_unpack_data_monitor),
 
-        // AXI Stream WGT
         .wgt_tdata(wgt_tdata),
         .wgt_tvalid(wgt_tvalid),
         .wgt_tlast(wgt_tlast),
         .wgt_tready(wgt_tready),
-        .wgt_wr_data_monitor(wgt_wr_data_monitor),
+        .wgt_unpack_en_monitor(wgt_unpack_en_monitor),
+        .wgt_unpack_wr_addr_monitor(wgt_unpack_wr_addr_monitor),
+        .wgt_unpack_data_monitor(wgt_unpack_data_monitor),
 
-        // AXI Stream BIAS
         .bias_tdata(bias_tdata),
         .bias_tvalid(bias_tvalid),
         .bias_tlast(bias_tlast),
         .bias_tready(bias_tready),
-        .bias_wr_data_monitor(bias_wr_data_monitor)
+        .bias_unpack_en_monitor(bias_unpack_en_monitor),
+        .bias_unpack_wr_addr_monitor(bias_unpack_wr_addr_monitor),
+        .bias_unpack_data_monitor(bias_unpack_data_monitor),
+
+        .rd_en_pixel(rd_en_pixel),
+        .rd_addr_pixel_monitor(rd_addr_pixel),
+        .rd_data_pixel_monitor(rd_data_pixel_monitor),
+
+        .rd_en_wgt(rd_en_wgt),
+        .rd_addr_wgt_monitor(rd_addr_wgt),
+        .rd_data_wgt_monitor(rd_data_wgt_monitor),
+
+        .rd_en_bias(rd_en_bias),
+        .rd_addr_bias_monitor(rd_addr_bias),
+        .rd_data_bias_monitor(rd_data_bias_monitor)
     );
 
     axi_stream_source_tb #(
         .DATA_WIDTH(`DATA_WIDTH),
         .MEM_DEPTH(`IMG_SIZE),
         .FILE_NAME("IFM.mem"),
-        .ADDR_WIDTH(14)
+        .ADDR_WIDTH(`IFM_ADDR_WIDTH)
     ) axi_stream_ifm (
         .clk(clk),
         .rst(rst),
@@ -90,9 +128,9 @@ module top_tb();
 
     axi_stream_source_tb #(
         .DATA_WIDTH(`DATA_WIDTH),
-        .MEM_DEPTH(`IMG_SIZE),
+        .MEM_DEPTH(`WGT_SIZE),
         .FILE_NAME("WGT.mem"),
-        .ADDR_WIDTH(14)
+        .ADDR_WIDTH(`WGT_ADDR_WIDTH)
     ) axi_stream_wgt (
         .clk(clk),
         .rst(rst),
@@ -105,9 +143,9 @@ module top_tb();
 
     axi_stream_source_tb #(
         .DATA_WIDTH(`DATA_WIDTH),
-        .MEM_DEPTH(`IMG_SIZE),
+        .MEM_DEPTH(`BIAS_SIZE),
         .FILE_NAME("BIAS.mem"),
-        .ADDR_WIDTH(14)
+        .ADDR_WIDTH(`BIAS_ADDR_WIDTH)
     ) axi_stream_bias (
         .clk(clk),
         .rst(rst),
@@ -122,10 +160,13 @@ module top_tb();
 
     initial begin
         clk = 0; rst = 1; start_system = 0;
+        rd_en_pixel = 0; rd_en_wgt = 0; rd_en_bias = 0;
         #13; rst = 0;
         #10; start_system = 1;
         #10; start_system = 0;
         wait(ifm_done_monitor);
+        rd_en_pixel = 1; rd_en_wgt = 1; rd_en_bias = 1;
+        #500; rd_en_pixel = 0; rd_en_wgt = 0; rd_en_bias = 0;
         #10; $finish;
     end
 endmodule
