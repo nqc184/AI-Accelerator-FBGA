@@ -99,15 +99,15 @@ module top_tb();
         .bias_unpack_data_monitor(bias_unpack_data_monitor),
 
         .rd_en_pixel(rd_en_pixel),
-        .rd_addr_pixel_monitor(rd_addr_pixel),
+        .rd_addr_pixel(rd_addr_pixel),
         .rd_data_pixel_monitor(rd_data_pixel_monitor),
 
         .rd_en_wgt(rd_en_wgt),
-        .rd_addr_wgt_monitor(rd_addr_wgt),
+        .rd_addr_wgt(rd_addr_wgt),
         .rd_data_wgt_monitor(rd_data_wgt_monitor),
 
         .rd_en_bias(rd_en_bias),
-        .rd_addr_bias_monitor(rd_addr_bias),
+        .rd_addr_bias(rd_addr_bias),
         .rd_data_bias_monitor(rd_data_bias_monitor)
     );
 
@@ -161,12 +161,22 @@ module top_tb();
     initial begin
         clk = 0; rst = 1; start_system = 0;
         rd_en_pixel = 0; rd_en_wgt = 0; rd_en_bias = 0;
+        rd_addr_pixel = 0; rd_addr_wgt = 0; rd_addr_bias = 0;
         #13; rst = 0;
         #10; start_system = 1;
         #10; start_system = 0;
         wait(ifm_done_monitor);
-        rd_en_pixel = 1; rd_en_wgt = 1; rd_en_bias = 1;
-        #500; rd_en_pixel = 0; rd_en_wgt = 0; rd_en_bias = 0;
+        for(int i = 0; i < 50; i++) begin
+            rd_en_pixel = 1;
+            rd_addr_pixel = i;
+            rd_en_wgt = 1;
+            rd_addr_wgt = i;
+            rd_en_bias = 1;
+            rd_addr_bias = i;
+            #10;
+        end
+        rd_en_pixel = 0; rd_en_wgt = 0; rd_en_bias = 0;
+        rd_addr_pixel = 0; rd_addr_wgt = 0; rd_addr_bias = 0;
         #10; $finish;
     end
 endmodule
