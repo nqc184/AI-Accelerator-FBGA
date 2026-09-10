@@ -52,7 +52,20 @@ module top #(
 
     input rd_en_bias,
     input [BIAS_ADDR_WIDTH-1:0] rd_addr_bias,
-    output [DATA_WIDTH-1:0] rd_data_bias_monitor
+    output [DATA_WIDTH-1:0] rd_data_bias_monitor,
+
+    input [15:0] img_width, img_height,
+    input [2:0] kernel_size, stride,
+    input [1:0] activation,
+    output [15:0] img_width_config_monitor, img_height_config_monitor,
+    output [2:0] kernel_size_config_monitor, stride_config_monitor,
+    output [1:0] activation_config_monitor,
+
+    output start_config_pixel_buffer_loader_monitor, start_config_weight_buffer_loader_monitor,
+    output start_config_activation_monitor, start_config_ofm_monitor,
+
+    input done_config_pixel_buffer_loader, done_config_weight_buffer_loader,
+    input done_config_activation, done_config_ofm
 );
     //System Controller
     wire start_load, start_npu;
@@ -114,6 +127,43 @@ module top #(
         .s_axis_tlast(bias_tlast), .s_axis_tready(bias_tready),
         .bram_wr_en(bias_unpack_wr_en), .bram_wr_addr(bias_unpack_wr_addr), .bram_wr_data(bias_unpack_wr_data),
         .done(bias_done)
+    );
+
+    //NPU controller 
+    wire [15:0] img_width_config, img_height_config;
+    wire [2:0] kernel_size_config, stride_config;
+    wire [1:0] activation_config;
+
+    assign img_width_config_monitor = img_width_config;
+    assign img_height_config_monitor = img_height_config;
+    assign kernel_size_config_monitor = kernel_size_config;
+    assign stride_config_monitor = stride_config;
+    assign activation_config_monitor = activation_config;
+
+    wire start_config_pixel_buffer_loader, start_config_weight_buffer_loader;
+    wire start_config_activation, start_config_ofm;
+
+    assign start_config_pixel_buffer_loader_monitor = start_config_pixel_buffer_loader;
+    assign start_config_weight_buffer_loader_monitor = start_config_weight_buffer_loader;
+    assign start_config_activation_monitor = start_config_activation;
+    assign start_config_ofm_monitor = start_config_ofm;
+    npu_controller npu_ctl(
+        .clk(clk), .rst(rst), .start_npu(start_npu),
+        .current_state_monitor(),
+
+        .img_width(img_width), .img_height(img_height),
+        .kernel_size(kernel_size), .stride(stride),
+        .activation(activation),
+
+        .img_width_config(img_width_config), .img_height_config(img_height_config),
+        .kernel_size_config(kernel_size_config), .stride_config(stride_config),
+        .activation_config(activation_config),
+
+        .start_config_pixel_buffer_loader(start_config_pixel_buffer_loader), .start_config_weight_buffer_loader(start_config_weight_buffer_loader),
+        .start_config_activation(start_config_activation), .start_config_ofm(start_config_ofm),
+
+        .done_config_pixel_buffer_loader(done_config_pixel_buffer_loader), .done_config_weight_buffer_loader(done_config_weight_buffer_loader),
+        .done_config_activation(done_config_activation), .done_config_ofm(done_config_ofm)
     );
 
     //On chip Memory

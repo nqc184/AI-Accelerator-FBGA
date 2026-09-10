@@ -54,6 +54,19 @@ module top_tb();
     logic [`BIAS_ADDR_WIDTH-1:0] rd_addr_bias;
     logic [`DATA_WIDTH-1:0] rd_data_bias_monitor;
 
+    logic [15:0] img_width, img_height;
+    logic [2:0] kernel_size, stride;
+    logic [1:0] activation;
+    logic [15:0] img_width_config_monitor, img_height_config_monitor;
+    logic [2:0] kernel_size_config_monitor, stride_config_monitor;
+    logic [1:0] activation_config_monitor;
+
+    logic start_config_pixel_buffer_loader_monitor, start_config_weight_buffer_loader_monitor;
+    logic start_config_activation_monitor, start_config_ofm_monitor;
+
+    logic done_config_pixel_buffer_loader, done_config_weight_buffer_loader;
+    logic done_config_activation, done_config_ofm;
+
     top #(
         .DATA_WIDTH(`DATA_WIDTH),
         .AXI_BURST(`AXI_BURST),
@@ -108,7 +121,20 @@ module top_tb();
 
         .rd_en_bias(rd_en_bias),
         .rd_addr_bias(rd_addr_bias),
-        .rd_data_bias_monitor(rd_data_bias_monitor)
+        .rd_data_bias_monitor(rd_data_bias_monitor),
+
+        .img_width(img_width), .img_height(img_height),
+        .kernel_size(kernel_size), .stride(stride),
+        .activation(activation),
+        .img_width_config_monitor(img_width_config_monitor), .img_height_config_monitor(img_height_config_monitor),
+        .kernel_size_config_monitor(kernel_size_config_monitor), .stride_config_monitor(stride_config_monitor),
+        .activation_config_monitor(activation_config_monitor),
+
+        .start_config_pixel_buffer_loader_monitor(start_config_pixel_buffer_loader_monitor), .start_config_weight_buffer_loader_monitor(start_config_weight_buffer_loader_monitor),
+        .start_config_activation_monitor(start_config_activation_monitor), .start_config_ofm_monitor(start_config_ofm_monitor),
+
+        .done_config_pixel_buffer_loader(done_config_pixel_buffer_loader), .done_config_weight_buffer_loader(done_config_weight_buffer_loader),
+        .done_config_activation(done_config_activation), .done_config_ofm(done_config_ofm)
     );
 
     axi_stream_source_tb #(
@@ -162,21 +188,37 @@ module top_tb();
         clk = 0; rst = 1; start_system = 0;
         rd_en_pixel = 0; rd_en_wgt = 0; rd_en_bias = 0;
         rd_addr_pixel = 0; rd_addr_wgt = 0; rd_addr_bias = 0;
+
+        img_width = 16'd128; img_height = 16'd128;
+        kernel_size = 3'd3; stride = 3'd1;
+        activation = 2'd1;
+
+        done_config_pixel_buffer_loader = 0; done_config_weight_buffer_loader = 0;
+        done_config_activation = 0; done_config_ofm = 0;
         #13; rst = 0;
         #10; start_system = 1;
         #10; start_system = 0;
-        wait(ifm_done_monitor);
-        for(int i = 0; i < 50; i++) begin
-            rd_en_pixel = 1;
-            rd_addr_pixel = i;
-            rd_en_wgt = 1;
-            rd_addr_wgt = i;
-            rd_en_bias = 1;
-            rd_addr_bias = i;
-            #10;
-        end
-        rd_en_pixel = 0; rd_en_wgt = 0; rd_en_bias = 0;
-        rd_addr_pixel = 0; rd_addr_wgt = 0; rd_addr_bias = 0;
+        // wait(ifm_done_monitor);
+        // for(int i = 0; i < 50; i++) begin
+        //     rd_en_pixel = 1;
+        //     rd_addr_pixel = i;
+        //     rd_en_wgt = 1;
+        //     rd_addr_wgt = i;
+        //     rd_en_bias = 1;
+        //     rd_addr_bias = i;
+        //     #10;
+        // end
+        // rd_en_pixel = 0; rd_en_wgt = 0; rd_en_bias = 0;
+        // rd_addr_pixel = 0; rd_addr_wgt = 0; rd_addr_bias = 0;
+        wait(start_npu_monitor == 1)
+        #33;
+        done_config_pixel_buffer_loader = 1; done_config_weight_buffer_loader = 1;
+        #10;
+        done_config_pixel_buffer_loader = 0; done_config_weight_buffer_loader = 0;
+        #22;
+        done_config_activation = 1; done_config_ofm = 1;
+        #10;
+        done_config_activation = 0; done_config_ofm = 0;
         #10; $finish;
     end
 endmodule
