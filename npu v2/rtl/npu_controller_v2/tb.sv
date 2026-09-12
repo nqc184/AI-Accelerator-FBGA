@@ -24,7 +24,7 @@ module tb;
     logic rd_en_bias; 
     logic [13:0] rd_addr_bias; 
 
-    logic valid_window_out;
+    logic valid_window_out, valid_wgt_out;
 
     npu_controller dut(
         .clk(clk), .rst(rst), .start_npu(start_npu),
@@ -51,7 +51,8 @@ module tb;
         .rd_en_bias(rd_en_bias), 
         .rd_addr_bias(rd_addr_bias), 
 
-        .valid_window_out(valid_window_out)
+        .valid_window_out(valid_window_out),
+        .valid_wgt_out(valid_wgt_out)
     );
 
     always #5 clk = ~clk;
@@ -65,7 +66,7 @@ module tb;
         activation = 2'd1;
         done_config_pixel_buffer_loader = 0; done_config_weight_buffer_loader = 0;
         done_config_activation = 0; done_config_ofm = 0;
-        valid_window_out = 0;
+        valid_window_out = 0; valid_wgt_out = 0;
         #13 rst = 0;
         #10 start_npu = 1;
         #10 start_npu = 0;
@@ -82,8 +83,9 @@ module tb;
         #50 done_config_ofm = 1;
         #10 done_config_ofm = 0;
 
-        #130 valid_window_out = 1;
-        #190 valid_window_out = 0;
+        #130 valid_window_out = 1; valid_wgt_out = 1;
+        wait(current_state_monitor == 3'd3)
+        valid_window_out = 0; valid_wgt_out = 0;
 
         #20 $finish;
     end 
