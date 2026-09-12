@@ -17,6 +17,15 @@ module tb;
     logic done_config_pixel_buffer_loader, done_config_weight_buffer_loader;
     logic done_config_activation, done_config_ofm;
 
+    logic rd_en_pixel;
+    logic [13:0] rd_addr_pixel; 
+    logic rd_en_wgt;
+    logic [13:0] rd_addr_wgt; 
+    logic rd_en_bias; 
+    logic [13:0] rd_addr_bias; 
+
+    logic valid_window_out;
+
     npu_controller dut(
         .clk(clk), .rst(rst), .start_npu(start_npu),
         .current_state_monitor(current_state_monitor),
@@ -33,7 +42,16 @@ module tb;
         .start_config_activation(start_config_activation), .start_config_ofm(start_config_ofm),
 
         .done_config_pixel_buffer_loader(done_config_pixel_buffer_loader), .done_config_weight_buffer_loader(done_config_weight_buffer_loader),
-        .done_config_activation(done_config_activation), .done_config_ofm(done_config_ofm)
+        .done_config_activation(done_config_activation), .done_config_ofm(done_config_ofm),
+
+        .rd_en_pixel(rd_en_pixel), 
+        .rd_addr_pixel(rd_addr_pixel), 
+        .rd_en_wgt(rd_en_wgt), 
+        .rd_addr_wgt(rd_addr_wgt), 
+        .rd_en_bias(rd_en_bias), 
+        .rd_addr_bias(rd_addr_bias), 
+
+        .valid_window_out(valid_window_out)
     );
 
     always #5 clk = ~clk;
@@ -47,6 +65,7 @@ module tb;
         activation = 2'd1;
         done_config_pixel_buffer_loader = 0; done_config_weight_buffer_loader = 0;
         done_config_activation = 0; done_config_ofm = 0;
+        valid_window_out = 0;
         #13 rst = 0;
         #10 start_npu = 1;
         #10 start_npu = 0;
@@ -63,7 +82,10 @@ module tb;
         #50 done_config_ofm = 1;
         #10 done_config_ofm = 0;
 
-        #200 $finish;
+        #130 valid_window_out = 1;
+        #190 valid_window_out = 0;
+
+        #20 $finish;
     end 
 
     initial begin

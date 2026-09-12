@@ -14,18 +14,36 @@ module npu_controller (
     output start_config_activation, start_config_ofm,
 
     input done_config_pixel_buffer_loader, done_config_weight_buffer_loader,
-    input done_config_activation, done_config_ofm
+    input done_config_activation, done_config_ofm,
+
+    output rd_en_pixel, 
+    output [13:0] rd_addr_pixel, 
+    output rd_en_wgt, 
+    output [13:0] rd_addr_wgt, 
+    output rd_en_bias, 
+    output [13:0] rd_addr_bias, 
+
+    input valid_window_out
 );
     localparam IDLE = 3'd0;
     localparam CONFIG = 3'd1;
-    localparam COMPUTE = 3'd2;
-    localparam DONE = 3'd3;
+    localparam LOAD = 3'd2;
+    localparam COMPUTE = 3'd3;
+    localparam DONE = 3'd4;
+
+    localparam WINDOW_COUNT = 5;
 
     reg [2:0] next_state, current_state;
     assign current_state_monitor = current_state;
 
+    reg [2:0] window_cnt;
+
     reg done_config_pixel_buffer_loader_flag, done_config_weight_buffer_loader_flag;
     reg done_config_activation_flag, done_config_ofm_flag;
+
+    reg rd_en_pixel_reg, rd_en_wgt_reg, rd_en_bias_reg;
+    reg [13:0] rd_addr_pixel_reg, rd_addr_wgt_reg, rd_addr_bias_reg;
+
     //Combinational logic (next state)
     always @(*) begin
         next_state = current_state;
@@ -41,11 +59,16 @@ module npu_controller (
             CONFIG: begin
                 if (done_config_pixel_buffer_loader_flag && done_config_weight_buffer_loader_flag &&
                     done_config_activation_flag && done_config_ofm_flag) begin
+                    next_state = LOAD;
+                end
+            end
+            LOAD: begin
+                if (window_cnt == WINDOW_COUNT) begin
                     next_state = COMPUTE;
                 end
             end
             COMPUTE: begin
-            
+                
             end
             DONE: begin
 
@@ -60,6 +83,11 @@ module npu_controller (
             done_config_weight_buffer_loader_flag <= 1'b0;
             done_config_activation_flag <= 1'b0;
             done_config_ofm_flag <= 1'b0;
+
+            window_cnt <= 3'd0;
+
+            rd_en_pixel_reg <= 1'b0; rd_en_wgt_reg <= 1'b0; rd_en_bias_reg <= 1'b0;
+            rd_addr_pixel_reg <= 14'd0; rd_addr_wgt_reg <= 14'd0; rd_addr_bias_reg <=14'd0;
         end
         else begin
             current_state <= next_state;
@@ -76,6 +104,14 @@ module npu_controller (
             done_config_activation_flag <= 1'b0;
             done_config_ofm_flag <= 1'b0;
         end
+        if(current_state == LOAD) begin
+            if (window_cnt < WINDOW_COUNT) begin 
+                rd_en_pixel_reg <= 1'b1;
+                if(rd_en_pixel_reg) rd_addr_pixel_reg <= rd_addr_pixel_reg + 1;
+            end
+            else if (window_cnt == WINDOW_COUNT) rd_en_pixel_reg <= 0;
+            if (valid_window_out) window_cnt <= window_cnt + 1;
+        end
     end
     //Output logic
     assign img_width_config = (current_state == CONFIG) ? img_width : 16'd0;
@@ -88,4 +124,11 @@ module npu_controller (
     assign start_config_weight_buffer_loader = (current_state == CONFIG) ? 1'b1 : 1'b0;
     assign start_config_activation = (current_state == CONFIG) ? 1'b1 : 1'b0;
     assign start_config_ofm = (current_state == CONFIG) ? 1'b1 : 1'b0;
+
+    assign rd_en_pixel = (current_state == LOAD) ? rd_en_pixel_reg : 0;
+    assign rd_addr_pixel = (current_state == LOAD) ? rd_addr_pixel_reg : 14'd0;
+    assign rd_en_wgt = (current_state == LOAD) ? rd_en_wgt_reg : 0; 
+    assign rd_addr_wgt = (current_state == LOAD) ? rd_addr_wgt_reg : 14'd0;
+    assign rd_en_bias = (current_state == LOAD) ? rd_en_bias_reg : 0; 
+    assign rd_addr_bias = (current_state == LOAD) ? rd_addr_bias_reg : 14'd0;
 endmodule
