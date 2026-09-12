@@ -6,6 +6,7 @@ module tb;
     logic [15:0] img_width, img_height;
     logic [2:0] kernel_size, stride;
     logic [1:0] activation;
+    logic [15:0] number_kernel;
 
     logic [15:0] img_width_config, img_height_config;
     logic [2:0] kernel_size_config, stride_config;
@@ -25,6 +26,7 @@ module tb;
     logic [13:0] rd_addr_bias; 
 
     logic valid_window_out, valid_wgt_out;
+    logic [15:0] number_kernel_monitor;
 
     npu_controller dut(
         .clk(clk), .rst(rst), .start_npu(start_npu),
@@ -33,6 +35,7 @@ module tb;
         .img_width(img_width), .img_height(img_height),
         .kernel_size(kernel_size), .stride(stride),
         .activation(activation),
+        .number_kernel(number_kernel),
 
         .img_width_config(img_width_config), .img_height_config(img_height_config),
         .kernel_size_config(kernel_size_config), .stride_config(stride_config),
@@ -52,7 +55,8 @@ module tb;
         .rd_addr_bias(rd_addr_bias), 
 
         .valid_window_out(valid_window_out),
-        .valid_wgt_out(valid_wgt_out)
+        .valid_wgt_out(valid_wgt_out),
+        .number_kernel_monitor(number_kernel_monitor)
     );
 
     always #5 clk = ~clk;
@@ -64,6 +68,7 @@ module tb;
         img_width = 16'd36; img_height = 16'd36;
         kernel_size = 3'd3; stride = 3'd2;
         activation = 2'd1;
+        number_kernel = 16'd6;
         done_config_pixel_buffer_loader = 0; done_config_weight_buffer_loader = 0;
         done_config_activation = 0; done_config_ofm = 0;
         valid_window_out = 0; valid_wgt_out = 0;
@@ -86,6 +91,9 @@ module tb;
         #130 valid_window_out = 1; valid_wgt_out = 1;
         wait(current_state_monitor == 3'd3)
         valid_window_out = 0; valid_wgt_out = 0;
+        #100; valid_window_out = 1; valid_wgt_out = 1;
+        #50; valid_window_out = 0; valid_wgt_out = 0;
+
 
         #20 $finish;
     end 
