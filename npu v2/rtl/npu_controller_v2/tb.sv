@@ -25,6 +25,9 @@ module tb;
     logic rd_en_bias; 
     logic [13:0] rd_addr_bias; 
 
+    logic start_calc;
+    logic done_calc;
+
     logic valid_window_out, valid_wgt_out;
     logic [15:0] number_kernel_monitor;
 
@@ -54,6 +57,8 @@ module tb;
         .rd_en_bias(rd_en_bias), 
         .rd_addr_bias(rd_addr_bias), 
 
+        .start_calc(start_calc), .done_calc(done_calc),
+
         .valid_window_out(valid_window_out),
         .valid_wgt_out(valid_wgt_out),
         .number_kernel_monitor(number_kernel_monitor)
@@ -72,6 +77,7 @@ module tb;
         done_config_pixel_buffer_loader = 0; done_config_weight_buffer_loader = 0;
         done_config_activation = 0; done_config_ofm = 0;
         valid_window_out = 0; valid_wgt_out = 0;
+        done_calc = 0;
         #13 rst = 0;
         #10 start_npu = 1;
         #10 start_npu = 0;
@@ -91,10 +97,12 @@ module tb;
         #130 valid_window_out = 1; valid_wgt_out = 1;
         wait(current_state_monitor == 3'd3)
         valid_window_out = 0; valid_wgt_out = 0;
+        #100; done_calc = 1;
+        #10; done_calc = 0;
         #100; valid_window_out = 1; valid_wgt_out = 1;
         #50; valid_window_out = 0; valid_wgt_out = 0;
-
-
+        #100; done_calc = 1;
+        #10; done_calc = 0;
         #20 $finish;
     end 
 

@@ -29,7 +29,8 @@ module npu_controller (
     output start_calc,
     input done_calc,
 
-    input valid_window_out, valid_wgt_out
+    input valid_window_out, valid_wgt_out,
+    input last_window_out
 );
     localparam IDLE = 3'd0;
     localparam CONFIG = 3'd1;
@@ -55,6 +56,8 @@ module npu_controller (
     reg [13:0] rd_addr_pixel_reg, rd_addr_wgt_reg, rd_addr_bias_reg;
 
     reg [15:0] number_kernel_reg;
+    reg start_calc_reg;
+    reg last_window_out_reg;
 
     //Combinational logic (next state)
     always @(*) begin
@@ -109,6 +112,7 @@ module npu_controller (
             rd_addr_pixel_reg <= 14'd0; rd_addr_wgt_reg <= 14'd0; rd_addr_bias_reg <=14'd0;
 
             number_kernel_reg <= 0;
+            start_calc_reg <= 0;
         end
         else begin
             current_state <= next_state;
@@ -144,27 +148,29 @@ module npu_controller (
             else if (window_cnt == WINDOW_COUNT) rd_en_pixel_reg <= 0;
             if (valid_window_out) window_cnt <= window_cnt + 1;
             //Load Weight
-            if (number_kernel_reg > WEIGHT_COUNT) begin
-                if (wgt_cnt < WEIGHT_COUNT) begin
-                    rd_en_wgt_reg <= 1'b1;
-                    if(rd_en_wgt_reg) rd_addr_wgt_reg <= rd_addr_wgt_reg + 1;
+            if(!last_window_out_reg) begin
+                if (number_kernel_reg > WEIGHT_COUNT) begin
+                    if (wgt_cnt < WEIGHT_COUNT) begin
+                        rd_en_wgt_reg <= 1'b1;
+                        if(rd_en_wgt_reg) rd_addr_wgt_reg <= rd_addr_wgt_reg + 1;
+                    end
+                    else if (wgt_cnt == WEIGHT_COUNT) begin
+                        rd_en_wgt_reg <= 0;
+                        number_kernel_reg <= number_kernel_reg - wgt_cnt;
+                    end
+                    if (valid_wgt_out) wgt_cnt <= wgt_cnt + 1;
                 end
-                else if (wgt_cnt == WEIGHT_COUNT) begin
-                    rd_en_wgt_reg <= 0;
-                    number_kernel_reg <= number_kernel_reg - wgt_cnt;
+                else if (number_kernel_reg <= WEIGHT_COUNT) begin
+                    if (wgt_cnt < number_kernel_reg) begin
+                        rd_en_wgt_reg <= 1'b1;
+                        if(rd_en_wgt_reg) rd_addr_wgt_reg <= rd_addr_wgt_reg + 1;
+                    end
+                    else if (wgt_cnt == number_kernel_reg) begin
+                        rd_en_wgt_reg <= 0; 
+                        number_kernel_reg <= 0;
+                    end
+                    if (valid_wgt_out) wgt_cnt <= wgt_cnt + 1;
                 end
-                if (valid_wgt_out) wgt_cnt <= wgt_cnt + 1;
-            end
-            else if (number_kernel_reg <= WEIGHT_COUNT) begin
-                if (wgt_cnt < number_kernel_reg) begin
-                    rd_en_wgt_reg <= 1'b1;
-                    if(rd_en_wgt_reg) rd_addr_wgt_reg <= rd_addr_wgt_reg + 1;
-                end
-                else if (wgt_cnt == number_kernel_reg) begin
-                    rd_en_wgt_reg <= 0; 
-                    number_kernel_reg <= 0;
-                end
-                if (valid_wgt_out) wgt_cnt <= wgt_cnt + 1;
             end
             //Load Bias
             if (bias_cnt < BIAS_COUNT) begin
@@ -175,6 +181,15 @@ module npu_controller (
                 end
             end
             else if (bias_cnt == BIAS_COUNT) rd_en_bias_reg <= 0;
+        end
+        if (current_state == COMPUTE) begin
+            start_calc_reg <= 1;
+            if (done_calc) begin
+                start_calc_reg <= 0;
+            end
+            if (last_window_out) begin 
+                last_window_out_reg <= 1;
+            end
         end
     end
     //Output logic
@@ -197,4 +212,5 @@ module npu_controller (
     assign rd_addr_bias = (current_state == LOAD) ? rd_addr_bias_reg : 14'd0;
 
     assign number_kernel_monitor = number_kernel_reg;
+    assign start_calc = start_calc_reg;
 endmodule
