@@ -28,8 +28,9 @@ module tb;
     logic start_calc;
     logic done_calc;
 
-    logic valid_window_out, valid_wgt_out;
+    logic valid_window_out, valid_wgt_out, last_window_out;
     logic [15:0] number_kernel_monitor;
+    logic [2:0] window_cnt_monitor, wgt_cnt_monitor, bias_cnt_monitor;
 
     npu_controller dut(
         .clk(clk), .rst(rst), .start_npu(start_npu),
@@ -61,7 +62,9 @@ module tb;
 
         .valid_window_out(valid_window_out),
         .valid_wgt_out(valid_wgt_out),
-        .number_kernel_monitor(number_kernel_monitor)
+        .last_window_out(last_window_out),
+        .number_kernel_monitor(number_kernel_monitor),
+        .window_cnt_monitor(window_cnt_monitor), .wgt_cnt_monitor(wgt_cnt_monitor), .bias_cnt_monitor(bias_cnt_monitor)
     );
 
     always #5 clk = ~clk;
@@ -76,7 +79,7 @@ module tb;
         number_kernel = 16'd6;
         done_config_pixel_buffer_loader = 0; done_config_weight_buffer_loader = 0;
         done_config_activation = 0; done_config_ofm = 0;
-        valid_window_out = 0; valid_wgt_out = 0;
+        valid_window_out = 0; valid_wgt_out = 0; last_window_out = 0;
         done_calc = 0;
         #13 rst = 0;
         #10 start_npu = 1;
@@ -94,13 +97,17 @@ module tb;
         #50 done_config_ofm = 1;
         #10 done_config_ofm = 0;
 
-        #130 valid_window_out = 1; valid_wgt_out = 1;
-        wait(current_state_monitor == 3'd3)
-        valid_window_out = 0; valid_wgt_out = 0;
+        #130; valid_window_out = 1; valid_wgt_out = 1;
+        #50; valid_window_out = 0; valid_wgt_out = 0;
         #100; done_calc = 1;
         #10; done_calc = 0;
-        #100; valid_window_out = 1; valid_wgt_out = 1;
-        #50; valid_window_out = 0; valid_wgt_out = 0;
+        #100; valid_window_out = 1; 
+        #50; valid_window_out = 0;  
+        #100; done_calc = 1;
+        #10; done_calc = 0;
+        #50; valid_window_out = 1;
+        #20; last_window_out = 1; 
+        #10; valid_window_out = 0; last_window_out = 0; 
         #100; done_calc = 1;
         #10; done_calc = 0;
         #20 $finish;
