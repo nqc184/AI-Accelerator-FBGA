@@ -4,18 +4,18 @@ module weight_loader #(
     parameter DW    = 24,
     parameter MAX_K = 5
 )(
-    input                           clk,
-    input                           rst,
-    input                           clear,
+    input clk,
+    input rst,
+    input clear,
 
-    input                           start_config,
-    input      [2:0]                kernel_size,
-    output reg                      done_config,
+    input start_config,
+    input [2:0] kernel_size,
+    output reg done_config,
 
-    input                           valid_in,
-    input      signed [DW-1:0]      weight_in,
+    input valid_in,
+    input signed [DW-1:0] weight_in,
 
-    output reg                      valid_weight_out,
+    output reg valid_weight_out,
     output reg signed [MAX_K*MAX_K*DW-1:0] weight_packed
 );
 
@@ -26,7 +26,7 @@ module weight_loader #(
     reg [2:0] kernel_size_reg;
     reg [5:0] required_count;
     reg [5:0] count;
-    reg       config_done;
+    reg config_done;
 
     integer i;
 
