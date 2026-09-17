@@ -227,4 +227,33 @@ module top #(
         .wr_en(bias_unpack_wr_en), .wr_addr(bias_unpack_wr_addr), .wr_data(bias_unpack_wr_data),
         .rd_en(rd_en_bias), .rd_addr(rd_addr_bias), .rd_data(rd_data_bias)
     );
+
+    //Pixel Loader 
+    pixel_stream_buffer #(
+        .DW(24), .MAX_W(128), .K(5)
+    )pixel_stream_buffer_inst(
+        .clk(clk), .rst(rst), .clear(1'b0), .start_config(start_config_pixel_buffer_loader),
+        .img_w(img_width_config), img_h(img_height_config), .kernel_size(kernel_size_config), stride(stride_config),
+        .valid_in(), .pixel_in(),
+
+        .valid_out(), .done_config(),
+        .last_window_out(),
+
+        .window_out_flat(),
+        .window_out_masked_flat(),
+        .window_packed()
+    );
+
+    //Weight Loader
+    weight_loader #(
+        .DW(24),
+        .MAX_K(5)
+    )weight_loader_inst(
+        .clk(clk), .rst(rst), .clear(1'b0), .start_config(start_config_weight_buffer_loader),
+        .kernel_size(kernel_size_config), .done_config(),
+
+        .valid_in(), .weight_in(),
+
+        .valid_weight_out(), .weight_packed()
+    );
 endmodule
