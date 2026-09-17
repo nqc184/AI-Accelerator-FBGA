@@ -10,7 +10,6 @@ module npu_controller (
     output [15:0] img_width_config, img_height_config,
     output [2:0] kernel_size_config, stride_config,
     output [1:0] activation_config,
-    output [5:0] number_ofm_config,
     output [15:0] number_kernel_monitor,
 
     output start_config_pixel_buffer_loader, start_config_weight_buffer_loader,
