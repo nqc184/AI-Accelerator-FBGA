@@ -24,6 +24,7 @@ module npu_controller (
     output [13:0] rd_addr_wgt, 
     output rd_en_bias, 
     output [13:0] rd_addr_bias, 
+    output valid_pixel, valid_wgt, valid_bias,
 
     output start_calc,
     input done_calc,
@@ -58,6 +59,7 @@ module npu_controller (
     reg done_config_activation_flag, done_config_ofm_flag;
 
     reg rd_en_pixel_reg, rd_en_wgt_reg, rd_en_bias_reg;
+    reg valid_pixel_reg, valid_wgt_reg, valid_bias_reg;
     reg [13:0] rd_addr_pixel_reg, rd_addr_wgt_reg, rd_addr_bias_reg;
 
     reg [15:0] number_kernel_reg;
@@ -120,6 +122,7 @@ module npu_controller (
             window_cnt <= 3'd0; wgt_cnt <= 3'd0; bias_cnt <= 3'd0;
 
             rd_en_pixel_reg <= 1'b0; rd_en_wgt_reg <= 1'b0; rd_en_bias_reg <= 1'b0;
+            valid_pixel_reg <= 0; valid_wgt_reg <= 0; valid_bias_reg <= 0;
             rd_addr_pixel_reg <= 14'd0; rd_addr_wgt_reg <= 14'd0; rd_addr_bias_reg <=14'd0;
 
             number_kernel_reg <= 0;
@@ -162,7 +165,10 @@ module npu_controller (
             //Load Pixel
             if (window_cnt < WINDOW_COUNT) begin 
                 rd_en_pixel_reg <= 1'b1;
-                if(rd_en_pixel_reg) rd_addr_pixel_reg <= rd_addr_pixel_reg + 1;
+                if(rd_en_pixel_reg) begin 
+                    valid_pixel_reg <= rd_en_pixel_reg;
+                    rd_addr_pixel_reg <= rd_addr_pixel_reg + 1;
+                end
             end
             else if (window_cnt == WINDOW_COUNT) rd_en_pixel_reg <= 0;
             if (valid_window_out && window_cnt < WINDOW_COUNT) window_cnt <= window_cnt + 1;
@@ -173,7 +179,10 @@ module npu_controller (
             if (number_kernel_reg > WEIGHT_COUNT) begin
                 if (wgt_cnt < WEIGHT_COUNT) begin
                     rd_en_wgt_reg <= 1'b1;
-                    if(rd_en_wgt_reg) rd_addr_wgt_reg <= rd_addr_wgt_reg + 1;
+                    if(rd_en_wgt_reg) begin
+                        valid_wgt_reg <= rd_en_wgt_reg;
+                        rd_addr_wgt_reg <= rd_addr_wgt_reg + 1;
+                    end
                 end
                 else if (wgt_cnt == WEIGHT_COUNT) begin
                     rd_en_wgt_reg <= 0;
@@ -184,7 +193,10 @@ module npu_controller (
             else if (number_kernel_reg <= WEIGHT_COUNT) begin
                 if (wgt_cnt < number_kernel_reg) begin
                     rd_en_wgt_reg <= 1'b1;
-                    if(rd_en_wgt_reg) rd_addr_wgt_reg <= rd_addr_wgt_reg + 1;
+                    if(rd_en_wgt_reg) begin 
+                        valid_wgt_reg <= rd_en_wgt_reg;
+                        rd_addr_wgt_reg <= rd_addr_wgt_reg + 1;
+                    end
                 end
                 else if (wgt_cnt == number_kernel_reg) begin
                     rd_en_wgt_reg <= 0; 
@@ -197,6 +209,7 @@ module npu_controller (
                 rd_en_bias_reg <= 1'b1;
                 bias_cnt <= bias_cnt + 1; 
                 if(rd_en_bias_reg) begin 
+                    valid_bias_reg <= rd_en_bias_reg;
                     rd_addr_bias_reg <= rd_addr_bias_reg + 1;
                 end
             end
@@ -227,6 +240,10 @@ module npu_controller (
     assign rd_addr_wgt = (current_state == LOAD) ? rd_addr_wgt_reg : 14'd0;
     assign rd_en_bias = (current_state == LOAD) ? rd_en_bias_reg : 0; 
     assign rd_addr_bias = (current_state == LOAD) ? rd_addr_bias_reg : 14'd0;
+
+    assign valid_pixel = valid_pixel_reg;
+    assign valid_wgt = valid_wgt_reg;
+    assign valid_bias = valid_bias_reg; 
 
     assign number_kernel_monitor = number_kernel_reg;
     assign start_calc = start_calc_reg;

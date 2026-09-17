@@ -25,6 +25,8 @@ module tb;
     logic rd_en_bias; 
     logic [13:0] rd_addr_bias; 
 
+    logic valid_pixel, valid_wgt, valid_bias;
+
     logic start_calc;
     logic done_calc;
 
@@ -57,6 +59,8 @@ module tb;
         .rd_addr_wgt(rd_addr_wgt), 
         .rd_en_bias(rd_en_bias), 
         .rd_addr_bias(rd_addr_bias), 
+
+        .valid_pixel(valid_pixel), .valid_wgt(valid_wgt), .valid_bias(valid_bias),
 
         .start_calc(start_calc), .done_calc(done_calc),
 
