@@ -70,6 +70,9 @@ module top_tb();
     logic rd_en_pixel_monitor;
     logic rd_en_wgt_monitor;
     logic rd_en_bias_monitor;
+    logic valid_pixel_monitor;
+    logic valid_wgt_monitor;
+    logic valid_bias_monitor;
 
     logic signed [`DATA_WIDTH-1:0] rd_data_pixel_monitor;
     logic signed [`DATA_WIDTH-1:0] rd_data_wgt_monitor;
@@ -167,6 +170,8 @@ module top_tb();
         .rd_en_pixel_monitor(rd_en_pixel_monitor),
         .rd_en_wgt_monitor(rd_en_wgt_monitor),
         .rd_en_bias_monitor(rd_en_bias_monitor),
+
+        .valid_pixel_monitor(valid_pixel_monitor), .valid_wgt_monitor(valid_wgt_monitor), .valid_bias_monitor(valid_bias_monitor),
 
         .rd_data_pixel_monitor(rd_data_pixel_monitor),
         .rd_data_wgt_monitor(rd_data_wgt_monitor),

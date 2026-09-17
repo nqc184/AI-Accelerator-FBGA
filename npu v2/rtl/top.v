@@ -61,6 +61,7 @@ module top #(
     input done_config_activation, done_config_ofm,
 
     output rd_en_pixel_monitor, rd_en_wgt_monitor, rd_en_bias_monitor,
+    output valid_pixel_monitor, valid_wgt_monitor, valid_bias_monitor, 
     output signed [DATA_WIDTH-1:0] rd_data_pixel_monitor, rd_data_wgt_monitor, rd_data_bias_monitor,
     output [IFM_ADDR_WIDTH-1:0] rd_addr_pixel_monitor,
     output [WGT_ADDR_WIDTH-1:0] rd_addr_wgt_monitor,
@@ -170,6 +171,11 @@ module top #(
     assign rd_addr_wgt_monitor = rd_addr_wgt;
     assign rd_addr_bias_monitor = rd_addr_bias;
 
+    wire valid_pixel, valid_wgt, valid_bias;
+    assign valid_pixel_monitor = valid_pixel;
+    assign valid_wgt_monitor = valid_wgt;
+    assign valid_bias_monitor = valid_bias;
+
     npu_controller npu_controller_inst(
         .clk(clk), .rst(rst), .start_npu(start_npu),
         .current_state_monitor(current_state_monitor),
@@ -196,6 +202,8 @@ module top #(
         .rd_addr_wgt(rd_addr_wgt), 
         .rd_en_bias(rd_en_bias), 
         .rd_addr_bias(rd_addr_bias), 
+
+        .valid_pixel(valid_pixel), .valid_wgt(valid_wgt), .valid_bias(valid_bias),
 
         .start_calc(start_calc),
         .done_calc(done_calc),

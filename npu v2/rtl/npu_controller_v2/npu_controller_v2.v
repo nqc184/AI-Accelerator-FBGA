@@ -62,7 +62,12 @@ module npu_controller (
     reg valid_pixel_reg, valid_wgt_reg, valid_bias_reg;
     reg [13:0] rd_addr_pixel_reg, rd_addr_wgt_reg, rd_addr_bias_reg;
 
+
+    reg [15:0] img_width_reg, img_height_reg;
+    reg [2:0] kernel_size_reg, stride_reg;
+    reg [1:0] activation_reg;
     reg [15:0] number_kernel_reg;
+
     reg start_calc_reg;
     reg last_window_out_reg;
     reg [2:0] wgt_batch_target;
@@ -125,6 +130,10 @@ module npu_controller (
             valid_pixel_reg <= 0; valid_wgt_reg <= 0; valid_bias_reg <= 0;
             rd_addr_pixel_reg <= 14'd0; rd_addr_wgt_reg <= 14'd0; rd_addr_bias_reg <=14'd0;
 
+            img_width_reg <= 16'd0; img_height_reg <= 16'd0;
+            kernel_size_reg <= 3'd0; stride_reg <= 3'd0;
+            activation_reg <= 2'd0;
+
             number_kernel_reg <= 0;
             start_calc_reg <= 0;
 
@@ -146,6 +155,9 @@ module npu_controller (
         end
         if (current_state == IDLE) begin
             if (start_npu) begin
+                img_width_reg <= img_width; img_height_reg <= img_height;
+                kernel_size_reg <= kernel_size; stride_reg <= stride;
+                activation_reg <= activation;
                 number_kernel_reg <= number_kernel;
             end
         end
@@ -170,7 +182,12 @@ module npu_controller (
                     rd_addr_pixel_reg <= rd_addr_pixel_reg + 1;
                 end
             end
-            else if (window_cnt == WINDOW_COUNT) rd_en_pixel_reg <= 0;
+            else if (window_cnt == WINDOW_COUNT) begin 
+                rd_en_pixel_reg <= 0;
+                if(!rd_en_pixel_reg) begin 
+                    valid_pixel_reg <= rd_en_pixel_reg;
+                end
+            end 
             if (valid_window_out && window_cnt < WINDOW_COUNT) window_cnt <= window_cnt + 1;
             if (last_window_out) begin 
                 last_window_out_reg <= 1;
@@ -183,10 +200,14 @@ module npu_controller (
                         valid_wgt_reg <= rd_en_wgt_reg;
                         rd_addr_wgt_reg <= rd_addr_wgt_reg + 1;
                     end
+                    else valid_wgt_reg <= 0;
                 end
                 else if (wgt_cnt == WEIGHT_COUNT) begin
                     rd_en_wgt_reg <= 0;
                     number_kernel_reg <= number_kernel_reg - wgt_cnt;
+                    if(!rd_en_wgt_reg) begin
+                        valid_wgt_reg <= 0;
+                    end 
                 end
                 if (valid_wgt_out && wgt_cnt < number_kernel_reg) wgt_cnt <= wgt_cnt + 1;
             end
@@ -200,6 +221,9 @@ module npu_controller (
                 end
                 else if (wgt_cnt == number_kernel_reg) begin
                     rd_en_wgt_reg <= 0; 
+                    if(!rd_en_wgt_reg) begin 
+                        valid_wgt_reg <= 0;
+                    end
                     number_kernel_reg <= 0;
                 end
                 if (valid_wgt_out) wgt_cnt <= wgt_cnt + 1;
@@ -213,7 +237,12 @@ module npu_controller (
                     rd_addr_bias_reg <= rd_addr_bias_reg + 1;
                 end
             end
-            else if (bias_cnt == BIAS_COUNT) rd_en_bias_reg <= 0;
+            else if (bias_cnt == BIAS_COUNT) begin
+                rd_en_bias_reg <= 0;
+                if(!rd_en_bias_reg) begin 
+                    valid_bias_reg <= 0;
+                end
+            end
         end
         if (current_state == COMPUTE) begin
             start_calc_reg <= 1;
@@ -223,11 +252,11 @@ module npu_controller (
         end
     end
     //Output logic
-    assign img_width_config = img_width;
-    assign img_height_config = img_height;
-    assign kernel_size_config = kernel_size;
-    assign stride_config = stride;
-    assign activation_config = activation;
+    assign img_width_config = img_width_reg;
+    assign img_height_config = img_height_reg;
+    assign kernel_size_config = kernel_size_reg;
+    assign stride_config = stride_reg;
+    assign activation_config = activation_reg;
     
     assign start_config_pixel_buffer_loader = (current_state == CONFIG) ? 1'b1 : 1'b0;
     assign start_config_weight_buffer_loader = (current_state == CONFIG) ? 1'b1 : 1'b0;
