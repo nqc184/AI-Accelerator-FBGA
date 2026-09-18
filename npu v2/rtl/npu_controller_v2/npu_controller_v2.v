@@ -55,6 +55,7 @@ module npu_controller (
     assign wgt_cnt_monitor = wgt_cnt;
     assign bias_cnt_monitor = bias_cnt;
 
+    reg pixel_cfg_sent, wgt_cfg_sent, act_cfg_sent, ofm_cfg_sent;
     reg done_config_pixel_buffer_loader_flag, done_config_weight_buffer_loader_flag;
     reg done_config_activation_flag, done_config_ofm_flag;
 
@@ -124,6 +125,11 @@ module npu_controller (
             done_config_activation_flag <= 1'b0;
             done_config_ofm_flag <= 1'b0;
 
+            pixel_cfg_sent <= 1'b0;
+            wgt_cfg_sent   <= 1'b0;
+            act_cfg_sent   <= 1'b0;
+            ofm_cfg_sent   <= 1'b0;
+
             window_cnt <= 3'd0; wgt_cnt <= 3'd0; bias_cnt <= 3'd0;
 
             rd_en_pixel_reg <= 1'b0; rd_en_wgt_reg <= 1'b0; rd_en_bias_reg <= 1'b0;
@@ -162,12 +168,22 @@ module npu_controller (
             end
         end
         if (current_state == CONFIG) begin
+            if (!pixel_cfg_sent) pixel_cfg_sent <= 1'b1;
+            if (!wgt_cfg_sent) wgt_cfg_sent   <= 1'b1;
+            if (!act_cfg_sent) act_cfg_sent   <= 1'b1;
+            if (!ofm_cfg_sent) ofm_cfg_sent   <= 1'b1;
+
             if (done_config_pixel_buffer_loader) done_config_pixel_buffer_loader_flag <= 1'b1;
             if (done_config_weight_buffer_loader) done_config_weight_buffer_loader_flag <= 1'b1;
             if (done_config_activation) done_config_activation_flag <= 1'b1;
             if (done_config_ofm) done_config_ofm_flag <= 1'b1;
         end
         else begin
+            pixel_cfg_sent <= 1'b0;
+            wgt_cfg_sent   <= 1'b0;
+            act_cfg_sent   <= 1'b0;
+            ofm_cfg_sent   <= 1'b0;
+
             done_config_pixel_buffer_loader_flag <= 1'b0;
             done_config_weight_buffer_loader_flag <= 1'b0;
             done_config_activation_flag <= 1'b0;
@@ -258,10 +274,10 @@ module npu_controller (
     assign stride_config = stride_reg;
     assign activation_config = activation_reg;
     
-    assign start_config_pixel_buffer_loader = (current_state == CONFIG) ? 1'b1 : 1'b0;
-    assign start_config_weight_buffer_loader = (current_state == CONFIG) ? 1'b1 : 1'b0;
-    assign start_config_activation = (current_state == CONFIG) ? 1'b1 : 1'b0;
-    assign start_config_ofm = (current_state == CONFIG) ? 1'b1 : 1'b0;
+    assign start_config_pixel_buffer_loader  = (current_state == CONFIG && !pixel_cfg_sent) ? 1'b1 : 1'b0;
+    assign start_config_weight_buffer_loader = (current_state == CONFIG && !wgt_cfg_sent) ? 1'b1 : 1'b0;
+    assign start_config_activation = (current_state == CONFIG && !act_cfg_sent) ? 1'b1 : 1'b0;
+    assign start_config_ofm = (current_state == CONFIG && !ofm_cfg_sent) ? 1'b1 : 1'b0;
 
     assign rd_en_pixel = (current_state == LOAD) ? rd_en_pixel_reg : 0;
     assign rd_addr_pixel = (current_state == LOAD) ? rd_addr_pixel_reg : 14'd0;

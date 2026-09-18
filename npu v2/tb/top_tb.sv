@@ -62,21 +62,15 @@ module top_tb();
     logic start_config_activation_monitor;
     logic start_config_ofm_monitor;
 
-    logic done_config_pixel_buffer_loader;
-    logic done_config_weight_buffer_loader;
+    logic done_config_pixel_buffer_loader_monitor;
+    logic done_config_weight_buffer_loader_monitor;
     logic done_config_activation;
     logic done_config_ofm;
 
-    logic rd_en_pixel_monitor;
-    logic rd_en_wgt_monitor;
-    logic rd_en_bias_monitor;
-    logic valid_pixel_monitor;
-    logic valid_wgt_monitor;
-    logic valid_bias_monitor;
+    logic rd_en_pixel_monitor, rd_en_wgt_monitor, rd_en_bias_monitor;
+    logic valid_pixel_monitor, valid_wgt_monitor, valid_bias_monitor;
 
-    logic signed [`DATA_WIDTH-1:0] rd_data_pixel_monitor;
-    logic signed [`DATA_WIDTH-1:0] rd_data_wgt_monitor;
-    logic signed [`DATA_WIDTH-1:0] rd_data_bias_monitor;
+    logic signed [`DATA_WIDTH-1:0] rd_data_pixel_monitor, rd_data_wgt_monitor, rd_data_bias_monitor;
 
     logic [`IFM_ADDR_WIDTH-1:0] rd_addr_pixel_monitor;
     logic [`WGT_ADDR_WIDTH-1:0] rd_addr_wgt_monitor;
@@ -85,9 +79,10 @@ module top_tb();
     logic start_calc;
     logic done_calc;
 
-    logic valid_window_out;
-    logic valid_wgt_out;
-    logic last_window_out;
+    logic valid_window_out_monitor;
+    logic valid_wgt_out_monitor;
+    logic last_window_out_monitor;
+    logic [599:0] window_packed_monitor, weight_packed_monitor;
 
     logic [2:0] window_cnt_monitor;
     logic [2:0] wgt_cnt_monitor;
@@ -162,8 +157,8 @@ module top_tb();
         .start_config_activation_monitor(start_config_activation_monitor),
         .start_config_ofm_monitor(start_config_ofm_monitor),
 
-        .done_config_pixel_buffer_loader(done_config_pixel_buffer_loader),
-        .done_config_weight_buffer_loader(done_config_weight_buffer_loader),
+        .done_config_pixel_buffer_loader_monitor(done_config_pixel_buffer_loader_monitor),
+        .done_config_weight_buffer_loader_monitor(done_config_weight_buffer_loader_monitor),
         .done_config_activation(done_config_activation),
         .done_config_ofm(done_config_ofm),
 
@@ -184,9 +179,11 @@ module top_tb();
         .start_calc(start_calc),
         .done_calc(done_calc),
 
-        .valid_window_out(valid_window_out),
-        .valid_wgt_out(valid_wgt_out),
-        .last_window_out(last_window_out),
+        .valid_window_out_monitor(valid_window_out_monitor),
+        .valid_wgt_out_monitor(valid_wgt_out_monitor),
+        .last_window_out_monitor(last_window_out_monitor),
+
+        .window_packed_monitor(window_packed_monitor), .weight_packed_monitor(weight_packed_monitor),
 
         .window_cnt_monitor(window_cnt_monitor),
         .wgt_cnt_monitor(wgt_cnt_monitor),
@@ -242,25 +239,22 @@ module top_tb();
 
     initial begin
         clk = 0; rst = 0; start_system = 0;
-        img_width = 16'd15; img_height = 16'd15;
+        img_width = 16'd5; img_height = 16'd5;
         kernel_size = 3'd3; stride = 3'd1;
         activation = 2'd1;
         number_kernel = 16'd6;
         done_calc = 0;
-        valid_window_out = 0; valid_wgt_out = 0; last_window_out = 0;
+        done_config_activation = 0; 
+        done_config_ofm = 0;
         #13; rst = 1;
         #10; rst = 0;
         #10; start_system = 1;
         #10; start_system = 0;
-        wait(start_config_pixel_buffer_loader_monitor == 1)
-        #10; done_config_pixel_buffer_loader = 1;
-        done_config_weight_buffer_loader = 1;
-        done_config_activation = 1; 
+        wait(done_config_pixel_buffer_loader_monitor == 1)
+        #10; done_config_activation = 1; 
         done_config_ofm = 1;
-        #10; done_config_pixel_buffer_loader = 0;
-        done_config_weight_buffer_loader = 0;
-        done_config_activation = 0; 
+        #10; done_config_activation = 0; 
         done_config_ofm = 0;
-        #200; $finish;
+        #1000; $finish;
     end
 endmodule

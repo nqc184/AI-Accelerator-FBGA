@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-module pixel_stream_buffer #(
+module pixel_loader #(
     parameter DW = 24,
     parameter MAX_W = 1024,
     parameter K = 5

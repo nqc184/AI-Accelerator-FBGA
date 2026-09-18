@@ -57,7 +57,7 @@ module top #(
     output start_config_pixel_buffer_loader_monitor, start_config_weight_buffer_loader_monitor,
     output start_config_activation_monitor, start_config_ofm_monitor,
 
-    input done_config_pixel_buffer_loader, done_config_weight_buffer_loader,
+    output done_config_pixel_buffer_loader_monitor, done_config_weight_buffer_loader_monitor,
     input done_config_activation, done_config_ofm,
 
     output rd_en_pixel_monitor, rd_en_wgt_monitor, rd_en_bias_monitor,
@@ -69,7 +69,8 @@ module top #(
 
     output start_calc,
     input done_calc,
-    input valid_window_out, valid_wgt_out, last_window_out,
+    output valid_window_out_monitor, valid_wgt_out_monitor, last_window_out_monitor,
+    output [599:0] window_packed_monitor, weight_packed_monitor,
     output [2:0] window_cnt_monitor, wgt_cnt_monitor, bias_cnt_monitor
 );
     //System Controller
@@ -155,6 +156,10 @@ module top #(
     assign start_config_activation_monitor = start_config_activation;
     assign start_config_ofm_monitor = start_config_ofm;
 
+    wire done_config_pixel_buffer_loader, done_config_weight_buffer_loader;
+    assign done_config_pixel_buffer_loader_monitor = done_config_pixel_buffer_loader;
+    assign done_config_weight_buffer_loader_monitor = done_config_weight_buffer_loader;
+
     wire rd_en_pixel, rd_en_wgt, rd_en_bias;
     wire signed [DATA_WIDTH-1:0] rd_data_pixel, rd_data_wgt, rd_data_bias;
     wire [IFM_ADDR_WIDTH-1:0] rd_addr_pixel;
@@ -175,6 +180,11 @@ module top #(
     assign valid_pixel_monitor = valid_pixel;
     assign valid_wgt_monitor = valid_wgt;
     assign valid_bias_monitor = valid_bias;
+
+    wire valid_window_out, valid_wgt_out, last_window_out;
+    assign valid_window_out_monitor = valid_window_out;
+    assign valid_wgt_out_monitor = valid_wgt_out;
+    assign last_window_out_monitor = last_window_out;
 
     npu_controller npu_controller_inst(
         .clk(clk), .rst(rst), .start_npu(start_npu),
@@ -237,31 +247,35 @@ module top #(
     );
 
     //Pixel Loader 
+    wire [599:0] window_packed;
+    assign window_packed_monitor = window_packed;
     pixel_stream_buffer #(
         .DW(24), .MAX_W(128), .K(5)
     )pixel_stream_buffer_inst(
         .clk(clk), .rst(rst), .clear(1'b0), .start_config(start_config_pixel_buffer_loader),
-        .img_w(img_width_config), img_h(img_height_config), .kernel_size(kernel_size_config), stride(stride_config),
-        .valid_in(), .pixel_in(),
+        .img_w(img_width_config), .img_h(img_height_config), .kernel_size(kernel_size_config), .stride(stride_config),
+        .valid_in(valid_pixel), .pixel_in(rd_data_pixel),
 
-        .valid_out(), .done_config(),
-        .last_window_out(),
+        .valid_out(valid_window_out), .done_config(done_config_pixel_buffer_loader),
+        .last_window_out(last_window_out),
 
         .window_out_flat(),
         .window_out_masked_flat(),
-        .window_packed()
+        .window_packed(window_packed)
     );
 
     //Weight Loader
+    wire [599:0] weight_packed;
+    assign weight_packed_monitor = weight_packed;
     weight_loader #(
         .DW(24),
         .MAX_K(5)
     )weight_loader_inst(
         .clk(clk), .rst(rst), .clear(1'b0), .start_config(start_config_weight_buffer_loader),
-        .kernel_size(kernel_size_config), .done_config(),
+        .kernel_size(kernel_size_config), .done_config(done_config_weight_buffer_loader),
 
-        .valid_in(), .weight_in(),
+        .valid_in(valid_wgt), .weight_in(rd_data_wgt),
 
-        .valid_weight_out(), .weight_packed()
+        .valid_weight_out(valid_wgt_out), .weight_packed(weight_packed)
     );
 endmodule
