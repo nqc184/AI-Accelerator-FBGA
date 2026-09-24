@@ -92,7 +92,7 @@ module npu_controller (
                 end
             end
             LOAD: begin
-                if (window_cnt == WINDOW_COUNT && wgt_cnt == WEIGHT_COUNT && bias_cnt == BIAS_COUNT && last_window_out_reg) begin
+                if (window_cnt == WINDOW_COUNT && wgt_cnt == WEIGHT_COUNT && bias_cnt == BIAS_COUNT || last_window_out_reg) begin
                     next_state = COMPUTE;
                 end
             end

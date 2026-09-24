@@ -249,7 +249,7 @@ module top #(
     //Pixel Loader 
     wire [599:0] window_packed;
     assign window_packed_monitor = window_packed;
-    pixel_stream_buffer #(
+    pixel_loader #(
         .DW(24), .MAX_W(128), .K(5)
     )pixel_stream_buffer_inst(
         .clk(clk), .rst(rst), .clear(1'b0), .start_config(start_config_pixel_buffer_loader),
