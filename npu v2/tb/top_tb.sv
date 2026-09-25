@@ -255,6 +255,12 @@ module top_tb();
         done_config_ofm = 1;
         #10; done_config_activation = 0; 
         done_config_ofm = 0;
+        wait(start_calc == 1) 
+        #50; done_calc = 1;
+        #10; done_calc = 0;
+        wait(start_calc == 1) 
+        #50; done_calc = 1;
+        #10; done_calc = 0;
         #1000; $finish;
     end
 endmodule
