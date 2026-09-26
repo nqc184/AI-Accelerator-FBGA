@@ -76,13 +76,16 @@ module top_tb();
     logic [`WGT_ADDR_WIDTH-1:0] rd_addr_wgt_monitor;
     logic [`BIAS_ADDR_WIDTH-1:0] rd_addr_bias_monitor;
 
-    logic start_calc;
+    logic start_calc_monitor;
+    logic clear_window_reg_monitor, clear_wgt_reg_monitor;
     logic done_calc;
 
     logic valid_window_out_monitor;
     logic valid_wgt_out_monitor;
     logic last_window_out_monitor;
     logic [599:0] window_packed_monitor, weight_packed_monitor;
+    logic [599:0] window_reg_0, window_reg_1, window_reg_2, window_reg_3, window_reg_4;
+    logic [599:0] wgt_reg_0, wgt_reg_1, wgt_reg_2, wgt_reg_3, wgt_reg_4;
 
     logic [2:0] window_cnt_monitor;
     logic [2:0] wgt_cnt_monitor;
@@ -176,7 +179,8 @@ module top_tb();
         .rd_addr_wgt_monitor(rd_addr_wgt_monitor),
         .rd_addr_bias_monitor(rd_addr_bias_monitor),
 
-        .start_calc(start_calc),
+        .start_calc_monitor(start_calc_monitor),
+        .clear_window_reg_monitor(clear_window_reg_monitor), .clear_wgt_reg_monitor(clear_wgt_reg_monitor),
         .done_calc(done_calc),
 
         .valid_window_out_monitor(valid_window_out_monitor),
@@ -185,6 +189,8 @@ module top_tb();
 
         .window_packed_monitor(window_packed_monitor), .weight_packed_monitor(weight_packed_monitor),
 
+        .window_reg_0(window_reg_0), .window_reg_1(window_reg_1), .window_reg_2(window_reg_2), .window_reg_3(window_reg_3), .window_reg_4(window_reg_4),
+        .wgt_reg_0(wgt_reg_0), .wgt_reg_1(wgt_reg_1), .wgt_reg_2(wgt_reg_2), .wgt_reg_3(wgt_reg_3), .wgt_reg_4(wgt_reg_4),
         .window_cnt_monitor(window_cnt_monitor),
         .wgt_cnt_monitor(wgt_cnt_monitor),
         .bias_cnt_monitor(bias_cnt_monitor)
@@ -255,10 +261,10 @@ module top_tb();
         done_config_ofm = 1;
         #10; done_config_activation = 0; 
         done_config_ofm = 0;
-        wait(start_calc == 1) 
+        wait(start_calc_monitor == 1) 
         #50; done_calc = 1;
         #10; done_calc = 0;
-        wait(start_calc == 1) 
+        wait(start_calc_monitor == 1) 
         #50; done_calc = 1;
         #10; done_calc = 0;
         #1000; $finish;

@@ -67,10 +67,13 @@ module top #(
     output [WGT_ADDR_WIDTH-1:0] rd_addr_wgt_monitor,
     output [BIAS_ADDR_WIDTH-1:0] rd_addr_bias_monitor,
 
-    output start_calc,
+    output start_calc_monitor,
+    output clear_window_reg_monitor, clear_wgt_reg_monitor,
     input done_calc,
     output valid_window_out_monitor, valid_wgt_out_monitor, last_window_out_monitor,
     output [599:0] window_packed_monitor, weight_packed_monitor,
+    output [599:0] window_reg_0, window_reg_1, window_reg_2, window_reg_3, window_reg_4,
+    output [599:0] wgt_reg_0, wgt_reg_1, wgt_reg_2, wgt_reg_3, wgt_reg_4,
     output [2:0] window_cnt_monitor, wgt_cnt_monitor, bias_cnt_monitor
 );
     //System Controller
@@ -176,6 +179,12 @@ module top #(
     assign rd_addr_wgt_monitor = rd_addr_wgt;
     assign rd_addr_bias_monitor = rd_addr_bias;
 
+    wire start_calc;
+    assign start_calc_monitor = start_calc;
+    wire clear_window_reg, clear_wgt_reg;
+    assign clear_window_reg_monitor = clear_window_reg;
+    assign clear_wgt_reg_monitor = clear_wgt_reg;
+
     wire valid_pixel, valid_wgt, valid_bias;
     assign valid_pixel_monitor = valid_pixel;
     assign valid_wgt_monitor = valid_wgt;
@@ -216,6 +225,7 @@ module top #(
         .valid_pixel(valid_pixel), .valid_wgt(valid_wgt), .valid_bias(valid_bias),
 
         .start_calc(start_calc),
+        .clear_window_reg(clear_window_reg), .clear_wgt_reg(clear_wgt_reg),
         .done_calc(done_calc),
 
         .valid_window_out(valid_window_out), .valid_wgt_out(valid_wgt_out),
@@ -277,5 +287,39 @@ module top #(
         .valid_in(valid_wgt), .weight_in(rd_data_wgt),
 
         .valid_weight_out(valid_wgt_out), .weight_packed(weight_packed)
+    );
+
+    //Reg 5x600 for Window
+    wire [599:0] window_reg [4:0];
+    assign window_reg_0 = window_reg[0];
+    assign window_reg_1 = window_reg[1];
+    assign window_reg_2 = window_reg[2];
+    assign window_reg_3 = window_reg[3];
+    assign window_reg_4 = window_reg[4];
+    reg_file_5x600 window_reg_file(
+        .clk(clk), .rst(rst), .clr(clear_window_reg),
+
+        .wr_en(valid_window_out),
+        .wr_sel(window_cnt_monitor),
+        .wr_data(window_packed),
+
+        .reg0(window_reg[0]), .reg1(window_reg[1]), .reg2(window_reg[2]), .reg3(window_reg[3]), .reg4(window_reg[4])
+    );
+
+    //Reg 5x600 for Weight
+    wire [599:0] wgt_reg [4:0];
+    assign wgt_reg_0 = wgt_reg[0];
+    assign wgt_reg_1 = wgt_reg[1];
+    assign wgt_reg_2 = wgt_reg[2];
+    assign wgt_reg_3 = wgt_reg[3];
+    assign wgt_reg_4 = wgt_reg[4];
+    reg_file_5x600 weigh_reg_file(
+        .clk(clk), .rst(rst), .clr(clear_wgt_reg),
+
+        .wr_en(valid_wgt_out),
+        .wr_sel(wgt_cnt_monitor),
+        .wr_data(weight_packed),
+
+        .reg0(wgt_reg[0]), .reg1(wgt_reg[1]), .reg2(wgt_reg[2]), .reg3(wgt_reg[3]), .reg4(wgt_reg[4])
     );
 endmodule

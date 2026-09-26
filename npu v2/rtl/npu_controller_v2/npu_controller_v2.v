@@ -26,6 +26,8 @@ module npu_controller (
     output [13:0] rd_addr_bias,
     output valid_pixel, valid_wgt, valid_bias,
 
+    output clear_window_reg, clear_wgt_reg,
+
     output start_calc,
     input done_calc,
 
@@ -67,6 +69,7 @@ module npu_controller (
     reg [15:0] number_kernel_reg;
 
     reg start_calc_reg;
+    reg clear_window_reg_r, clear_wgt_reg_r;
     reg last_window_out_reg;
     reg [2:0] wgt_batch_target;   
 
@@ -146,7 +149,8 @@ module npu_controller (
             activation_reg <= 2'd0;
 
             number_kernel_reg <= 16'd0;
-            start_calc_reg <= 1'b0;
+            start_calc_reg <= 1'b0; 
+            clear_window_reg_r <= 1'b0; clear_wgt_reg_r    <= 1'b0;
 
             last_window_out_reg <= 1'b0;
             wgt_batch_target <= 3'd0;
@@ -157,6 +161,8 @@ module npu_controller (
         end
         else begin
             current_state <= next_state;
+            clear_window_reg_r <= (current_state == CONFIG  && next_state == LOAD) || (current_state == COMPUTE && next_state == LOAD);
+            clear_wgt_reg_r <= (current_state == COMPUTE) && done_calc && last_window_out_reg;
             if (current_state == CONFIG && next_state == LOAD) begin
                 wgt_batch_target  <= (number_kernel_reg > WEIGHT_COUNT) ? WEIGHT_COUNT[2:0] : number_kernel_reg[2:0];
                 wgt_words_target  <= ((number_kernel_reg > WEIGHT_COUNT) ? WEIGHT_COUNT[2:0] : number_kernel_reg[2:0])
@@ -285,4 +291,6 @@ module npu_controller (
 
     assign number_kernel_monitor = number_kernel_reg;
     assign start_calc = start_calc_reg;
+    assign clear_window_reg = clear_window_reg_r;
+    assign clear_wgt_reg    = clear_wgt_reg_r;
 endmodule
