@@ -43,7 +43,7 @@ module top #(
     output wire bias_tready,
     output bias_unpack_en_monitor,
     output [BIAS_ADDR_WIDTH-1:0] bias_unpack_wr_addr_monitor,
-    output [DATA_WIDTH-1:0] bias_unpack_data_monitor,
+    output [(DATA_WIDTH*2)-1:0] bias_unpack_data_monitor,
 
     input [15:0] img_width, img_height,
     input [2:0] kernel_size, stride,
@@ -68,7 +68,7 @@ module top #(
     output [BIAS_ADDR_WIDTH-1:0] rd_addr_bias_monitor,
 
     output start_calc_monitor,
-    output clear_window_reg_monitor, clear_wgt_reg_monitor,
+    output clear_window_reg_monitor, clear_wgt_reg_monitor, clear_bias_reg_monitor,
     input done_calc,
     output valid_window_out_monitor, valid_wgt_out_monitor, last_window_out_monitor,
     output [599:0] window_packed_monitor, weight_packed_monitor,
@@ -184,6 +184,7 @@ module top #(
     wire clear_window_reg, clear_wgt_reg;
     assign clear_window_reg_monitor = clear_window_reg;
     assign clear_wgt_reg_monitor = clear_wgt_reg;
+    assign clear_bias_reg_monitor = clear_bias_reg;
 
     wire valid_pixel, valid_wgt, valid_bias;
     assign valid_pixel_monitor = valid_pixel;
@@ -225,7 +226,7 @@ module top #(
         .valid_pixel(valid_pixel), .valid_wgt(valid_wgt), .valid_bias(valid_bias),
 
         .start_calc(start_calc),
-        .clear_window_reg(clear_window_reg), .clear_wgt_reg(clear_wgt_reg),
+        .clear_window_reg(clear_window_reg), .clear_wgt_reg(clear_wgt_reg), .clear_bias_reg(clear_bias_reg),
         .done_calc(done_calc),
 
         .valid_window_out(valid_window_out), .valid_wgt_out(valid_wgt_out),
@@ -250,7 +251,7 @@ module top #(
     );
 
     //Bias 
-    bram #(.DW(DATA_WIDTH), .DEPTH(BIAS_SIZE), .ADDR_WIDTH(BIAS_ADDR_WIDTH)) bias_bram (
+    bram #(.DW(DATA_WIDTH*2), .DEPTH(BIAS_SIZE), .ADDR_WIDTH(BIAS_ADDR_WIDTH)) bias_bram (
         .clk(clk),
         .wr_en(bias_unpack_wr_en), .wr_addr(bias_unpack_wr_addr), .wr_data(bias_unpack_wr_data),
         .rd_en(rd_en_bias), .rd_addr(rd_addr_bias), .rd_data(rd_data_bias)
@@ -287,6 +288,21 @@ module top #(
         .valid_in(valid_wgt), .weight_in(rd_data_wgt),
 
         .valid_weight_out(valid_wgt_out), .weight_packed(weight_packed)
+    );
+
+    //Bias Adder 5x48
+    bias_adder_5x48 bias_adder(
+        .clk(clk), .rst(rst), .clr(clear_bias_reg),
+
+        .bias_wr_en(valid_bias),
+        .bias_wr_sel(bias_cnt_monitor),
+        .bias_wr_data(rd_data_bias),
+
+        .data_in0(48'sd0), .data_in1(48'sd0), .data_in2(48'sd0), .data_in3(48'sd0), .data_in4(48'sd0),
+        .data_valid0(1'b0), .data_valid1(1'b0), .data_valid2(1'b0), .data_valid3(1'b0), .data_valid4(1'b0),
+
+        .result0(), .result1(), .result2(), .result3(), .result4(),
+        .result_valid0(), .result_valid1(), .result_valid2(), .result_valid3(), .result_valid4()
     );
 
     //Reg 5x600 for Window

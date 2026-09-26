@@ -70,14 +70,15 @@ module top_tb();
     logic rd_en_pixel_monitor, rd_en_wgt_monitor, rd_en_bias_monitor;
     logic valid_pixel_monitor, valid_wgt_monitor, valid_bias_monitor;
 
-    logic signed [`DATA_WIDTH-1:0] rd_data_pixel_monitor, rd_data_wgt_monitor, rd_data_bias_monitor;
+    logic signed [`DATA_WIDTH-1:0] rd_data_pixel_monitor, rd_data_wgt_monitor;
+    logic signed [(`DATA_WIDTH*2)-1:0]rd_data_bias_monitor;
 
     logic [`IFM_ADDR_WIDTH-1:0] rd_addr_pixel_monitor;
     logic [`WGT_ADDR_WIDTH-1:0] rd_addr_wgt_monitor;
     logic [`BIAS_ADDR_WIDTH-1:0] rd_addr_bias_monitor;
 
     logic start_calc_monitor;
-    logic clear_window_reg_monitor, clear_wgt_reg_monitor;
+    logic clear_window_reg_monitor, clear_wgt_reg_monitor, clear_bias_reg_monitor;
     logic done_calc;
 
     logic valid_window_out_monitor;
@@ -180,7 +181,7 @@ module top_tb();
         .rd_addr_bias_monitor(rd_addr_bias_monitor),
 
         .start_calc_monitor(start_calc_monitor),
-        .clear_window_reg_monitor(clear_window_reg_monitor), .clear_wgt_reg_monitor(clear_wgt_reg_monitor),
+        .clear_window_reg_monitor(clear_window_reg_monitor), .clear_wgt_reg_monitor(clear_wgt_reg_monitor), .clear_bias_reg_monitor(clear_bias_reg_monitor),
         .done_calc(done_calc),
 
         .valid_window_out_monitor(valid_window_out_monitor),
@@ -227,7 +228,7 @@ module top_tb();
     );
 
     axi_stream_source_tb #(
-        .DATA_WIDTH(`DATA_WIDTH),
+        .DATA_WIDTH(`DATA_WIDTH * 2),
         .MEM_DEPTH(`BIAS_SIZE),
         .FILE_NAME("BIAS.mem"),
         .ADDR_WIDTH(`BIAS_ADDR_WIDTH)
