@@ -5,7 +5,7 @@ module schedule_ctl (
 
     output reg  load,
     output reg [5:0] cycle,
-    output reg  done
+    output wire  done
 );
 
 reg [1:0] state;
@@ -22,14 +22,12 @@ always @(posedge clk) begin
         state <= IDLE;
         cycle <= 6'd0;
         load  <= 1'b0;
-        done  <= 1'b0;
     end
     else begin
         case(state)
 
         IDLE: begin
             load  <= 1'b0;
-            done  <= 1'b0;
             cycle <= 6'd0;
 
             if(start)
@@ -54,7 +52,6 @@ always @(posedge clk) begin
         end
 
         DONE: begin
-            done  <= 1'b1;
             cycle <= 6'd0;
             state <= IDLE;
         end
@@ -62,5 +59,5 @@ always @(posedge clk) begin
         endcase
     end
 end
-
+    assign done = (state == DONE);
 endmodule

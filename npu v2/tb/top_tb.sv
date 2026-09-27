@@ -79,7 +79,7 @@ module top_tb();
 
     logic start_calc_monitor;
     logic clear_window_reg_monitor, clear_wgt_reg_monitor, clear_bias_reg_monitor;
-    logic done_calc;
+    logic done_calc_monitor;
 
     logic valid_window_out_monitor;
     logic valid_wgt_out_monitor;
@@ -91,6 +91,19 @@ module top_tb();
     logic [2:0] window_cnt_monitor;
     logic [2:0] wgt_cnt_monitor;
     logic [2:0] bias_cnt_monitor;
+
+    logic [5:0] cycle_out_monitor;
+    logic signed [`DATA_WIDTH-1:0] a1_monitor, a2_monitor, a3_monitor, a4_monitor, a5_monitor;
+    logic signed [`DATA_WIDTH-1:0] b1_monitor, b2_monitor, b3_monitor, b4_monitor, b5_monitor;
+    
+    logic signed [47:0] c1_monitor, c2_monitor, c3_monitor, c4_monitor, c5_monitor;
+    logic signed [47:0] c6_monitor, c7_monitor, c8_monitor, c9_monitor, c10_monitor;
+    logic signed [47:0] c11_monitor, c12_monitor, c13_monitor, c14_monitor, c15_monitor;
+    logic signed [47:0] c16_monitor, c17_monitor, c18_monitor, c19_monitor, c20_monitor;
+    logic signed [47:0] c21_monitor, c22_monitor, c23_monitor, c24_monitor, c25_monitor;
+
+    logic signed [47:0] col1_out_monitor, col2_out_monitor, col3_out_monitor, col4_out_monitor, col5_out_monitor;
+    logic col1_valid_monitor, col2_valid_monitor, col3_valid_monitor, col4_valid_monitor, col5_valid_monitor;
 
     top #(
         .DATA_WIDTH(`DATA_WIDTH),
@@ -182,7 +195,7 @@ module top_tb();
 
         .start_calc_monitor(start_calc_monitor),
         .clear_window_reg_monitor(clear_window_reg_monitor), .clear_wgt_reg_monitor(clear_wgt_reg_monitor), .clear_bias_reg_monitor(clear_bias_reg_monitor),
-        .done_calc(done_calc),
+        .done_calc_monitor(done_calc_monitor),
 
         .valid_window_out_monitor(valid_window_out_monitor),
         .valid_wgt_out_monitor(valid_wgt_out_monitor),
@@ -194,7 +207,21 @@ module top_tb();
         .wgt_reg_0(wgt_reg_0), .wgt_reg_1(wgt_reg_1), .wgt_reg_2(wgt_reg_2), .wgt_reg_3(wgt_reg_3), .wgt_reg_4(wgt_reg_4),
         .window_cnt_monitor(window_cnt_monitor),
         .wgt_cnt_monitor(wgt_cnt_monitor),
-        .bias_cnt_monitor(bias_cnt_monitor)
+        .bias_cnt_monitor(bias_cnt_monitor),
+
+        .cycle_out_monitor(cycle_out_monitor),
+
+        .a1_monitor(a1_monitor), .a2_monitor(a2_monitor), .a3_monitor(a3_monitor), .a4_monitor(a4_monitor), .a5_monitor(a5_monitor),
+        .b1_monitor(b1_monitor), .b2_monitor(b2_monitor), .b3_monitor(b3_monitor), .b4_monitor(b4_monitor), .b5_monitor(b5_monitor),
+
+        .c1_monitor(c1_monitor), .c2_monitor(c2_monitor), .c3_monitor(c3_monitor), .c4_monitor(c4_monitor), .c5_monitor(c5_monitor),
+        .c6_monitor(c6_monitor), .c7_monitor(c7_monitor), .c8_monitor(c8_monitor), .c9_monitor(c9_monitor), .c10_monitor(c10_monitor),
+        .c11_monitor(c11_monitor), .c12_monitor(c12_monitor), .c13_monitor(c13_monitor), .c14_monitor(c14_monitor), .c15_monitor(c15_monitor),
+        .c16_monitor(c16_monitor), .c17_monitor(c17_monitor), .c18_monitor(c18_monitor), .c19_monitor(c19_monitor), .c20_monitor(c20_monitor),
+        .c21_monitor(c21_monitor), .c22_monitor(c22_monitor), .c23_monitor(c23_monitor), .c24_monitor(c24_monitor), .c25_monitor(c25_monitor),
+
+        .col1_out_monitor(col1_out_monitor), .col2_out_monitor(col2_out_monitor), .col3_out_monitor(col3_out_monitor), .col4_out_monitor(col4_out_monitor), .col5_out_monitor(col5_out_monitor),
+        .col1_valid_monitor(col1_valid_monitor), .col2_valid_monitor(col2_valid_monitor), .col3_valid_monitor(col3_valid_monitor), .col4_valid_monitor(col4_valid_monitor), .col5_valid_monitor(col5_valid_monitor)
     );
 
     axi_stream_source_tb #(
@@ -250,7 +277,6 @@ module top_tb();
         kernel_size = 3'd3; stride = 3'd1;
         activation = 2'd1;
         number_kernel = 16'd6;
-        done_calc = 0;
         done_config_activation = 0; 
         done_config_ofm = 0;
         #13; rst = 1;
@@ -262,12 +288,7 @@ module top_tb();
         done_config_ofm = 1;
         #10; done_config_activation = 0; 
         done_config_ofm = 0;
-        wait(start_calc_monitor == 1) 
-        #50; done_calc = 1;
-        #10; done_calc = 0;
-        wait(start_calc_monitor == 1) 
-        #50; done_calc = 1;
-        #10; done_calc = 0;
-        #1000; $finish;
+        wait(number_kernel_config_monitor == 15'd1)
+        #5000; $finish;
     end
 endmodule

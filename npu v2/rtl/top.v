@@ -68,13 +68,26 @@ module top #(
     output [BIAS_ADDR_WIDTH-1:0] rd_addr_bias_monitor,
 
     output start_calc_monitor,
+    output done_calc_monitor,
     output clear_window_reg_monitor, clear_wgt_reg_monitor, clear_bias_reg_monitor,
-    input done_calc,
     output valid_window_out_monitor, valid_wgt_out_monitor, last_window_out_monitor,
     output [599:0] window_packed_monitor, weight_packed_monitor,
     output [599:0] window_reg_0, window_reg_1, window_reg_2, window_reg_3, window_reg_4,
     output [599:0] wgt_reg_0, wgt_reg_1, wgt_reg_2, wgt_reg_3, wgt_reg_4,
-    output [2:0] window_cnt_monitor, wgt_cnt_monitor, bias_cnt_monitor
+    output [2:0] window_cnt_monitor, wgt_cnt_monitor, bias_cnt_monitor,
+
+    output [5:0] cycle_out_monitor,
+    output signed [DATA_WIDTH-1:0] a1_monitor, a2_monitor, a3_monitor, a4_monitor, a5_monitor,
+    output signed [DATA_WIDTH-1:0] b1_monitor, b2_monitor, b3_monitor, b4_monitor, b5_monitor,
+    
+    output signed [47:0] c1_monitor, c2_monitor, c3_monitor, c4_monitor, c5_monitor,
+    output signed [47:0] c6_monitor, c7_monitor, c8_monitor, c9_monitor, c10_monitor,
+    output signed [47:0] c11_monitor, c12_monitor, c13_monitor, c14_monitor, c15_monitor,
+    output signed [47:0] c16_monitor, c17_monitor, c18_monitor, c19_monitor, c20_monitor,
+    output signed [47:0] c21_monitor, c22_monitor, c23_monitor, c24_monitor, c25_monitor,
+
+    output signed [47:0] col1_out_monitor, col2_out_monitor, col3_out_monitor, col4_out_monitor, col5_out_monitor,
+    output col1_valid_monitor, col2_valid_monitor, col3_valid_monitor, col4_valid_monitor, col5_valid_monitor
 );
     //System Controller
     wire start_load, start_npu;
@@ -180,6 +193,8 @@ module top #(
     assign rd_addr_bias_monitor = rd_addr_bias;
 
     wire start_calc;
+    wire done_calc;
+    assign done_calc_monitor = done_calc;
     assign start_calc_monitor = start_calc;
     wire clear_window_reg, clear_wgt_reg;
     assign clear_window_reg_monitor = clear_window_reg;
@@ -306,12 +321,13 @@ module top #(
     );
 
     //Reg 5x600 for Window
-    wire [599:0] window_reg [4:0];
-    assign window_reg_0 = window_reg[0];
-    assign window_reg_1 = window_reg[1];
-    assign window_reg_2 = window_reg[2];
-    assign window_reg_3 = window_reg[3];
-    assign window_reg_4 = window_reg[4];
+    wire [599:0] window_0, window_1, window_2, window_3, window_4;
+    assign window_reg_0 = window_0;
+    assign window_reg_1 = window_1;
+    assign window_reg_2 = window_2;
+    assign window_reg_3 = window_3;
+    assign window_reg_4 = window_4;
+
     reg_file_5x600 window_reg_file(
         .clk(clk), .rst(rst), .clr(clear_window_reg),
 
@@ -319,7 +335,7 @@ module top #(
         .wr_sel(window_cnt_monitor),
         .wr_data(window_packed),
 
-        .reg0(window_reg[0]), .reg1(window_reg[1]), .reg2(window_reg[2]), .reg3(window_reg[3]), .reg4(window_reg[4])
+        .reg0(window_0), .reg1(window_1), .reg2(window_2), .reg3(window_3), .reg4(window_4)
     );
 
     //Reg 5x600 for Weight
@@ -337,5 +353,95 @@ module top #(
         .wr_data(weight_packed),
 
         .reg0(wgt_reg[0]), .reg1(wgt_reg[1]), .reg2(wgt_reg[2]), .reg3(wgt_reg[3]), .reg4(wgt_reg[4])
+    );
+
+    //MAC 
+    wire [5:0] cycle_out;
+    wire signed [DATA_WIDTH-1:0] a1, a2, a3, a4, a5;
+    wire signed [DATA_WIDTH-1:0] b1, b2, b3, b4, b5;
+    
+    wire [47:0] c1, c2, c3, c4, c5;
+    wire [47:0] c6, c7, c8, c9, c10;
+    wire [47:0] c11, c12, c13, c14, c15;
+    wire [47:0] c16, c17, c18, c19, c20;
+    wire [47:0] c21, c22, c23, c24, c25;
+
+    assign cycle_out_monitor = cycle_out;
+    assign a1_monitor = a1;
+    assign a2_monitor = a2;
+    assign a3_monitor = a3;
+    assign a4_monitor = a4;
+    assign a5_monitor = a5;
+    assign b1_monitor = b1;
+    assign b2_monitor = b2;
+    assign b3_monitor = b3;
+    assign b4_monitor = b4;
+    assign b5_monitor = b5;
+    
+    assign c1_monitor  = c1;
+    assign c2_monitor  = c2;
+    assign c3_monitor  = c3;
+    assign c4_monitor  = c4;
+    assign c5_monitor  = c5;
+
+    assign c6_monitor  = c6;
+    assign c7_monitor  = c7;
+    assign c8_monitor  = c8;
+    assign c9_monitor  = c9;
+    assign c10_monitor = c10;
+
+    assign c11_monitor = c11;
+    assign c12_monitor = c12;
+    assign c13_monitor = c13;
+    assign c14_monitor = c14;
+    assign c15_monitor = c15;
+
+    assign c16_monitor = c16;
+    assign c17_monitor = c17;
+    assign c18_monitor = c18;
+    assign c19_monitor = c19;
+    assign c20_monitor = c20;
+
+    assign c21_monitor = c21;
+    assign c22_monitor = c22;
+    assign c23_monitor = c23;
+    assign c24_monitor = c24;
+    assign c25_monitor = c25;
+
+    wire signed [47:0] col1_out, col2_out, col3_out, col4_out, col5_out;
+    wire col1_valid, col2_valid, col3_valid, col4_valid, col5_valid;
+    assign col1_out_monitor = col1_out;
+    assign col2_out_monitor = col2_out;
+    assign col3_out_monitor = col3_out;
+    assign col4_out_monitor = col4_out;
+    assign col5_out_monitor = col5_out;
+
+    assign col1_valid_monitor = col1_valid;
+    assign col2_valid_monitor = col2_valid;
+    assign col3_valid_monitor = col3_valid;
+    assign col4_valid_monitor = col4_valid;
+    assign col5_valid_monitor = col5_valid;
+
+    calc_unit #(.DW(24)
+    )calc_unit_inst(
+        .clk(clk), .reset(rst), .start(start_calc),
+
+        .IFM0(window_0), .IFM1(window_1), .IFM2(window_2), .IFM3(window_3), .IFM4(window_4),
+        .WGT0(wgt_reg[0]), .WGT1(wgt_reg[1]), .WGT2(wgt_reg[2]), .WGT3(wgt_reg[3]), .WGT4(wgt_reg[4]),
+        .cycle_out(cycle_out),
+
+        .a1_monitor(a1), .a2_monitor(a2), .a3_monitor(a3), .a4_monitor(a4), .a5_monitor(a5),
+        .b1_monitor(b1), .b2_monitor(b2), .b3_monitor(b3), .b4_monitor(b4), .b5_monitor(b5),
+
+        .c1(c1), .c2(c2), .c3(c3), .c4(c4), .c5(c5),
+        .c6(c6), .c7(c7), .c8(c8), .c9(c9), .c10(c10),
+        .c11(c11), .c12(c12), .c13(c13), .c14(c14), .c15(c15),
+        .c16(c16), .c17(c17), .c18(c18), .c19(c19), .c20(c20),
+        .c21(c21), .c22(c22), .c23(c23), .c24(c24), .c25(c25),
+
+        .col1_out(col1_out), .col2_out(col2_out), .col3_out(col3_out), .col4_out(col4_out), .col5_out(col5_out),
+        .col1_valid(col1_valid), .col2_valid(col2_valid), .col3_valid(col3_valid), .col4_valid(col4_valid), .col5_valid(col5_valid),
+
+        .done(done_calc)
     );
 endmodule

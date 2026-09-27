@@ -57,6 +57,7 @@ module npu_controller (
     assign bias_cnt_monitor = bias_cnt;
 
     reg pixel_cfg_sent, wgt_cfg_sent, act_cfg_sent, ofm_cfg_sent;
+    reg start_calc_sent;
     reg done_config_pixel_buffer_loader_flag, done_config_weight_buffer_loader_flag;
     reg done_config_activation_flag, done_config_ofm_flag;
 
@@ -138,6 +139,7 @@ module npu_controller (
             wgt_cfg_sent <= 1'b0;
             act_cfg_sent <= 1'b0;
             ofm_cfg_sent <= 1'b0;
+            start_calc_sent <= 1'b0;
 
             window_cnt <= 3'd0; wgt_cnt <= 3'd0; bias_cnt <= 3'd0;
 
@@ -263,10 +265,17 @@ module npu_controller (
             end
             valid_bias_reg <= rd_en_bias;   
         end
-
         if (current_state == COMPUTE) begin
-            start_calc_reg <= 1'b1;
-            if (done_calc) start_calc_reg <= 1'b0;
+            if (!start_calc_sent) begin
+                start_calc_reg  <= 1'b1;
+                start_calc_sent <= 1'b1;
+            end
+            else begin
+                start_calc_reg <= 1'b0; 
+            end
+        end
+        else begin
+            start_calc_sent <= 1'b0;  
         end
     end
 
