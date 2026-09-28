@@ -1,156 +1,123 @@
-`timescale 1ns/1ps
-
-module axi_lite_source_tb #(
-    parameter DATA_WIDTH = 32,
-    parameter ADDR_WIDTH = 32,
-    parameter MEM_DEPTH  = 5,
-    parameter FILE_NAME  = "CONFIG.mem"
+module axi_stream_source_tb #(
+    parameter int DATA_WIDTH = 24,
+    parameter int MEM_DEPTH  = 16384,
+    parameter string FILE_NAME = "IFM.mem",
+    parameter int ADDR_WIDTH = 14
 )(
-    input wire clk,
-    input wire rst,
-    input wire start,
-
-    output reg [ADDR_WIDTH-1:0] s_axi_awaddr,
-    output reg                  s_axi_awvalid,
-    input  wire                 s_axi_awready,
-
-    output reg [DATA_WIDTH-1:0] s_axi_wdata,
-    output reg [(DATA_WIDTH/8)-1:0] s_axi_wstrb,
-    output reg                  s_axi_wvalid,
-    input  wire                 s_axi_wready,
-
-    input  wire [1:0] s_axi_bresp,
-    input  wire       s_axi_bvalid,
-    output reg        s_axi_bready
+    input  logic         clk,
+    input  logic         rst,
+    input  logic         start,
+    output logic [127:0] m_axis_tdata,
+    output logic         m_axis_tvalid,
+    output logic         m_axis_tlast,
+    input  logic         m_axis_tready
 );
-
-    reg [DATA_WIDTH-1:0] mem [0:MEM_DEPTH-1];
-
+ 
+    typedef enum logic [1:0] {
+        IDLE = 2'd0,
+        SEND = 2'd1,
+        DONE = 2'd2
+    } state_t;
+ 
+    state_t state;
+ 
+    logic signed [DATA_WIDTH-1:0] mem [0:MEM_DEPTH-1];
+    logic [ADDR_WIDTH-1:0] index;
+ 
     initial begin
-        $readmemh(FILE_NAME,mem);
-    end
-
-    reg [2:0] index;
-
-    localparam IDLE       = 3'd0;
-    localparam SEND       = 3'd1;
-    localparam RESP       = 3'd2;
-    localparam DONE       = 3'd3;
-
-    reg [2:0] state;
-
-
-    always @(posedge clk) begin
-
-        if(rst) begin
-
-            state <= IDLE;
-
-            index <= 0;
-
-            s_axi_awaddr  <= 0;
-            s_axi_awvalid <= 0;
-
-            s_axi_wdata   <= 0;
-            s_axi_wstrb   <= 4'hF;
-            s_axi_wvalid  <= 0;
-
-            s_axi_bready  <= 0;
-
+        int fd, val, n;
+        for (int i = 0; i < MEM_DEPTH; i++) mem[i] = '0;
+        fd = $fopen(FILE_NAME, "r");
+        n  = 0;
+        while (n < MEM_DEPTH && $fscanf(fd, "%d", val) == 1) begin
+            mem[n] = val;
+            n++;
         end
-
+        $fclose(fd);
+    end
+ 
+    task automatic pack_beat(input logic [ADDR_WIDTH-1:0] base_idx);
+        logic [4:0] mask;
+        int valid_count;
+        int invalid_count;
+ 
+        if (base_idx >= MEM_DEPTH)
+            valid_count = 0;
+        else if (MEM_DEPTH - base_idx >= 5)
+            valid_count = 5;
+        else
+            valid_count = MEM_DEPTH - base_idx;
+ 
+        invalid_count = 5 - valid_count; 
+ 
+        mask = 5'b00000;
+        for (int k = 0; k < 5; k++) begin
+            if (k >= invalid_count)
+                mask[4-k] = 1'b1; 
+        end
+ 
+        m_axis_tdata[127:125] <= 3'b000;
+        m_axis_tdata[124:120] <= mask;
+ 
+        for (int k = 0; k < 5; k++) begin
+            if (k >= invalid_count) begin
+                automatic int j = k - invalid_count;
+                m_axis_tdata[119-DATA_WIDTH*k -: DATA_WIDTH] <= mem[base_idx + (valid_count-1-j)];
+            end
+            else
+                m_axis_tdata[119-DATA_WIDTH*k -: DATA_WIDTH] <= '0;
+        end
+    endtask
+ 
+    always_ff @(posedge clk) begin
+        if (rst) begin
+            state         <= IDLE;
+            index         <= '0;
+            m_axis_tdata  <= '0;
+            m_axis_tvalid <= 1'b0;
+            m_axis_tlast  <= 1'b0;
+        end
         else begin
-
-            case(state)
-
+            unique case (state)
                 IDLE: begin
-
-                    s_axi_awvalid <= 0;
-                    s_axi_wvalid  <= 0;
-                    s_axi_bready  <= 0;
-
-                    if(start) begin
-
-                        index <= 0;
-
-                        s_axi_awaddr  <= 32'h00000004;
-                        s_axi_wdata   <= mem[0];
-
-                        s_axi_awvalid <= 1;
-                        s_axi_wvalid  <= 1;
-
+                    m_axis_tvalid <= 1'b0;
+                    m_axis_tlast  <= 1'b0;
+ 
+                    if (start) begin
+                        index <= '0;
+                        pack_beat(0);
+ 
+                        m_axis_tvalid <= 1'b1;
+                        m_axis_tlast  <= (MEM_DEPTH <= 5);
+ 
                         state <= SEND;
-
                     end
-
                 end
-
-
+ 
                 SEND: begin
-
-                    if(s_axi_awready && s_axi_wready) begin
-
-                        s_axi_awvalid <= 0;
-                        s_axi_wvalid  <= 0;
-
-                        s_axi_bready <= 1;
-
-                        state <= RESP;
-
-                    end
-
-                end
-
-
-                RESP: begin
-
-                    if(s_axi_bvalid && s_axi_bready) begin
-
-                        s_axi_bready <= 0;
-
-                        if(index == MEM_DEPTH-1) begin
-
-                            state <= DONE;
-                        
+                    if (m_axis_tvalid && m_axis_tready) begin
+                        if (index + 5 >= MEM_DEPTH) begin
+                            m_axis_tvalid <= 1'b0;
+                            m_axis_tlast  <= 1'b0;
+                            state         <= DONE;
                         end
-
                         else begin
-
-                            index <= index + 1'b1;
-
-                            s_axi_awaddr <= 32'h00000004 + ((index + 1'b1) * 4);
-                            s_axi_wdata  <= mem[index + 1'b1];
-
-                            s_axi_awvalid <= 1;
-                            s_axi_wvalid  <= 1;
-
-                            state <= SEND;
-
+                            index <= index + 5;
+                            pack_beat(index + 5);
+                            m_axis_tlast <= (index + 10 >= MEM_DEPTH);
                         end
-
                     end
-
                 end
-
-
+ 
                 DONE: begin
-
-                     if(!start)
-                        state <= IDLE;
-
+                    m_axis_tvalid <= 1'b0;
+                    m_axis_tlast  <= 1'b0;
+                    state         <= IDLE;
                 end
-
-
-                default: begin
-
-                    state <= IDLE;
-
-                end
-
+ 
+                default: state <= IDLE;
             endcase
-
         end
-
     end
-
+ 
 endmodule
