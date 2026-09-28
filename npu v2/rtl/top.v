@@ -493,4 +493,7 @@ module top #(
         .data_valid_activation3(),
         .data_valid_activation4()
     );
+
+    //Quantization
+    
 endmodule
