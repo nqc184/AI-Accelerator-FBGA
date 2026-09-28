@@ -87,7 +87,10 @@ module top #(
     output signed [47:0] c21_monitor, c22_monitor, c23_monitor, c24_monitor, c25_monitor,
 
     output signed [47:0] col1_out_monitor, col2_out_monitor, col3_out_monitor, col4_out_monitor, col5_out_monitor,
-    output col1_valid_monitor, col2_valid_monitor, col3_valid_monitor, col4_valid_monitor, col5_valid_monitor
+    output col1_valid_monitor, col2_valid_monitor, col3_valid_monitor, col4_valid_monitor, col5_valid_monitor,
+
+    output signed [47:0] bias_adder_result0_monitor, bias_adder_result1_monitor, bias_adder_result2_monitor, bias_adder_result3_monitor, bias_adder_result4_monitor,
+    output signed bias_adder_valid0_monitor, bias_adder_valid1_monitor, bias_adder_valid2_monitor, bias_adder_valid3_monitor, bias_adder_valid4_monitor
 );
     //System Controller
     wire start_load, start_npu;
@@ -305,21 +308,6 @@ module top #(
         .valid_weight_out(valid_wgt_out), .weight_packed(weight_packed)
     );
 
-    //Bias Adder 5x48
-    bias_adder_5x48 bias_adder(
-        .clk(clk), .rst(rst), .clr(clear_bias_reg),
-
-        .bias_wr_en(valid_bias),
-        .bias_wr_sel(bias_cnt_monitor),
-        .bias_wr_data(rd_data_bias),
-
-        .data_in0(48'sd0), .data_in1(48'sd0), .data_in2(48'sd0), .data_in3(48'sd0), .data_in4(48'sd0),
-        .data_valid0(1'b0), .data_valid1(1'b0), .data_valid2(1'b0), .data_valid3(1'b0), .data_valid4(1'b0),
-
-        .result0(), .result1(), .result2(), .result3(), .result4(),
-        .result_valid0(), .result_valid1(), .result_valid2(), .result_valid3(), .result_valid4()
-    );
-
     //Reg 5x600 for Window
     wire [599:0] window_0, window_1, window_2, window_3, window_4;
     assign window_reg_0 = window_0;
@@ -445,5 +433,64 @@ module top #(
         .done(done_calc)
     );
 
-    
+     //Bias Adder 5x48
+    wire [47:0] bias_adder_result0, bias_adder_result1, bias_adder_result2, bias_adder_result3, bias_adder_result4;
+    wire bias_adder_valid0, bias_adder_valid1, bias_adder_valid2, bias_adder_valid3, bias_adder_valid4; 
+    assign bias_adder_result0_monitor = bias_adder_result0;
+    assign bias_adder_result1_monitor = bias_adder_result1;
+    assign bias_adder_result2_monitor = bias_adder_result2;
+    assign bias_adder_result3_monitor = bias_adder_result3;
+    assign bias_adder_result4_monitor = bias_adder_result4;
+    assign bias_adder_valid0_monitor = bias_adder_valid0;
+    assign bias_adder_valid1_monitor = bias_adder_valid1;
+    assign bias_adder_valid2_monitor = bias_adder_valid2;
+    assign bias_adder_valid3_monitor = bias_adder_valid3;
+    assign bias_adder_valid4_monitor = bias_adder_valid4;
+    bias_adder_5x48 bias_adder(
+        .clk(clk), .rst(rst), .clr(clear_bias_reg),
+
+        .bias_wr_en(valid_bias),
+        .bias_wr_sel(bias_cnt_monitor),
+        .bias_wr_data(rd_data_bias),
+
+        .data_in0(col1_out), .data_in1(col2_out), .data_in2(col3_out), .data_in3(col4_out), .data_in4(col5_out),
+        .data_valid0(col1_valid), .data_valid1(col2_valid), .data_valid2(col3_valid), .data_valid3(col4_valid), .data_valid4(col5_valid),
+
+        .result0(bias_adder_result0), .result1(bias_adder_result1), .result2(bias_adder_result2), .result3(bias_adder_result3), .result4(bias_adder_result4),
+        .result_valid0(bias_adder_valid0), .result_valid1(bias_adder_valid1), .result_valid2(bias_adder_valid2), .result_valid3(bias_adder_valid3), .result_valid4(bias_adder_valid4)
+    );
+
+    //Activation 
+    activation_5x #(
+        .DATA_WIDTH(48),
+        .LEAK_SHIFT(4)
+    ) activation_5x_inst (
+        .clk(clk), .rst(rst),
+        .en0(), .en1(), .en2(), .en3(), .en4(),
+
+        .valid_in0(), .valid_in1(), .valid_in2(), .valid_in3(), .valid_in4(),
+
+        .start_activation(),
+        .mode(),
+
+        .data_in_activation0(),
+        .data_in_activation1(),
+        .data_in_activation2(),
+        .data_in_activation3(),
+        .data_in_activation4(),
+
+        .data_out_activation0(),
+        .data_out_activation1(),
+        .data_out_activation2(),
+        .data_out_activation3(),
+        .data_out_activation4(),
+
+        .done_config_activation(),
+
+        .data_valid_activation0(),
+        .data_valid_activation1(),
+        .data_valid_activation2(),
+        .data_valid_activation3(),
+        .data_valid_activation4()
+    );
 endmodule
