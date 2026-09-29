@@ -91,6 +91,10 @@ module top #(
 
     output signed [47:0] bias_adder_result0_monitor, bias_adder_result1_monitor, bias_adder_result2_monitor, bias_adder_result3_monitor, bias_adder_result4_monitor,
     output signed bias_adder_valid0_monitor, bias_adder_valid1_monitor, bias_adder_valid2_monitor, bias_adder_valid3_monitor, bias_adder_valid4_monitor
+
+    output signed [47:0] data_in_activation0_monitor, data_in_activation1_monitor, data_in_activation2_monitor, data_in_activation3_monitor, data_in_activation4_monitor,
+    output data_valid_activation0_monitor, data_valid_activation1_monitor, data_valid_activation2_monitor, data_valid_activation3_monitor, data_valid_activation4_monitor,
+    output signed [47:0] data_out_activation0_monitor, data_out_activation1_monitor, data_out_activation2_monitor, data_out_activation3_monitor, data_out_activation4_monitor
 );
     //System Controller
     wire start_load, start_npu;
@@ -461,7 +465,6 @@ module top #(
     );
 
     //Activation
-    wire valid_act_in0, valid_act_in1, valid_act_in2, valid_act_in3, valid_act_in4;
     wire signed [47:0] data_in_activation0, data_in_activation1, data_in_activation2, data_in_activation3, data_in_activation4;
     wire signed [47:0] data_out_activation0, data_out_activation1, data_out_activation2, data_out_activation3, data_out_activation4;
     assign data_in_activation0_monitor = data_in_activation0; 
@@ -488,10 +491,10 @@ module top #(
         .clk(clk), .rst(rst),
         .en0(1'b1), .en1(1'b1), .en2(1'b1), .en3(1'b1), .en4(1'b1),
 
-        .valid_in0(), .valid_in1(), .valid_in2(), .valid_in3(), .valid_in4(),
+        .valid_in0(bias_adder_valid0), .valid_in1(bias_adder_valid1), .valid_in2(bias_adder_valid2), .valid_in3(bias_adder_valid3), .valid_in4(bias_adder_valid4),
 
-        .start_activation(),
-        .mode(),
+        .start_activation(start_config_activation),
+        .mode(activation_config),
 
         .data_in_activation0(data_in_activation0),
         .data_in_activation1(data_in_activation1),
