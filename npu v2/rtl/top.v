@@ -460,40 +460,70 @@ module top #(
         .result_valid0(bias_adder_valid0), .result_valid1(bias_adder_valid1), .result_valid2(bias_adder_valid2), .result_valid3(bias_adder_valid3), .result_valid4(bias_adder_valid4)
     );
 
-    //Activation 
+    //Activation
+    wire valid_act_in0, valid_act_in1, valid_act_in2, valid_act_in3, valid_act_in4;
+    wire signed [47:0] data_in_activation0, data_in_activation1, data_in_activation2, data_in_activation3, data_in_activation4;
+    wire signed [47:0] data_out_activation0, data_out_activation1, data_out_activation2, data_out_activation3, data_out_activation4;
+    assign data_in_activation0_monitor = data_in_activation0; 
+    assign data_in_activation1_monitor = data_in_activation1;
+    assign data_in_activation2_monitor = data_in_activation2; 
+    assign data_in_activation3_monitor = data_in_activation3; 
+    assign data_in_activation4_monitor = data_in_activation4;
+
+    assign data_out_activation0_monitor = data_out_activation0; 
+    assign data_out_activation1_monitor = data_out_activation1; 
+    assign data_out_activation2_monitor = data_out_activation2; 
+    assign data_out_activation3_monitor = data_out_activation3; 
+    assign data_out_activation4_monitor = data_out_activation4;
+    wire data_valid_activation0, data_valid_activation1, data_valid_activation2, data_valid_activation3, data_valid_activation4;
+    assign data_valid_activation0_monitor = data_valid_activation0;
+    assign data_valid_activation1_monitor = data_valid_activation1;
+    assign data_valid_activation2_monitor = data_valid_activation2;
+    assign data_valid_activation3_monitor = data_valid_activation3;
+    assign data_valid_activation4_monitor = data_valid_activation4;
     activation_5x #(
         .DATA_WIDTH(48),
         .LEAK_SHIFT(4)
     ) activation_5x_inst (
         .clk(clk), .rst(rst),
-        .en0(), .en1(), .en2(), .en3(), .en4(),
+        .en0(1'b1), .en1(1'b1), .en2(1'b1), .en3(1'b1), .en4(1'b1),
 
         .valid_in0(), .valid_in1(), .valid_in2(), .valid_in3(), .valid_in4(),
 
         .start_activation(),
         .mode(),
 
-        .data_in_activation0(),
-        .data_in_activation1(),
-        .data_in_activation2(),
-        .data_in_activation3(),
-        .data_in_activation4(),
+        .data_in_activation0(data_in_activation0),
+        .data_in_activation1(data_in_activation1),
+        .data_in_activation2(data_in_activation2),
+        .data_in_activation3(data_in_activation3),
+        .data_in_activation4(data_in_activation4),
 
-        .data_out_activation0(),
-        .data_out_activation1(),
-        .data_out_activation2(),
-        .data_out_activation3(),
-        .data_out_activation4(),
+        .data_out_activation0(data_out_activation0),
+        .data_out_activation1(data_out_activation1),
+        .data_out_activation2(data_out_activation2),
+        .data_out_activation3(data_out_activation3),
+        .data_out_activation4(data_out_activation4),
 
         .done_config_activation(),
 
-        .data_valid_activation0(),
-        .data_valid_activation1(),
-        .data_valid_activation2(),
-        .data_valid_activation3(),
-        .data_valid_activation4()
+        .data_valid_activation0(data_valid_activation0),
+        .data_valid_activation1(data_valid_activation1),
+        .data_valid_activation2(data_valid_activation2),
+        .data_valid_activation3(data_valid_activation3),
+        .data_valid_activation4(data_valid_activation4)
     );
 
     //Quantization
-    
+    quantization_5x #(
+        .DATA_IN_WIDTH(48),
+        .DATA_OUT_WIDTH(24)
+    )quantization_5x_inst(
+        .clk(), .rst(),
+        .en0(), .en1(), .en2(), .en3(), .en4(), 
+        .valid_in0(), .valid_in1(), .valid_in2(), .valid_in3(), .valid_in4(),
+        .data_in0(), .data_in1(), .data_in2(), .data_in3(), .data_in4(),
+        .data_out0(), .data_out1(), .data_out2(), .data_out3(), .data_out4(),
+        .valid_out0(), .valid_out1(), .valid_out2(), .valid_out3(), .valid_out4()
+    );
 endmodule
