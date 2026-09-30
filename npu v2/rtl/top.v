@@ -57,8 +57,8 @@ module top #(
     output start_config_pixel_buffer_loader_monitor, start_config_weight_buffer_loader_monitor,
     output start_config_activation_monitor, start_config_ofm_monitor,
 
-    output done_config_pixel_buffer_loader_monitor, done_config_weight_buffer_loader_monitor,
-    input done_config_activation, done_config_ofm,
+    output done_config_pixel_buffer_loader_monitor, done_config_weight_buffer_loader_monitor, done_config_activation_monitor,
+    input done_config_ofm,
 
     output rd_en_pixel_monitor, rd_en_wgt_monitor, rd_en_bias_monitor,
     output valid_pixel_monitor, valid_wgt_monitor, valid_bias_monitor, 
@@ -90,7 +90,7 @@ module top #(
     output col1_valid_monitor, col2_valid_monitor, col3_valid_monitor, col4_valid_monitor, col5_valid_monitor,
 
     output signed [47:0] bias_adder_result0_monitor, bias_adder_result1_monitor, bias_adder_result2_monitor, bias_adder_result3_monitor, bias_adder_result4_monitor,
-    output signed bias_adder_valid0_monitor, bias_adder_valid1_monitor, bias_adder_valid2_monitor, bias_adder_valid3_monitor, bias_adder_valid4_monitor
+    output signed bias_adder_valid0_monitor, bias_adder_valid1_monitor, bias_adder_valid2_monitor, bias_adder_valid3_monitor, bias_adder_valid4_monitor,
 
     output signed [47:0] data_in_activation0_monitor, data_in_activation1_monitor, data_in_activation2_monitor, data_in_activation3_monitor, data_in_activation4_monitor,
     output data_valid_activation0_monitor, data_valid_activation1_monitor, data_valid_activation2_monitor, data_valid_activation3_monitor, data_valid_activation4_monitor,
@@ -179,9 +179,10 @@ module top #(
     assign start_config_activation_monitor = start_config_activation;
     assign start_config_ofm_monitor = start_config_ofm;
 
-    wire done_config_pixel_buffer_loader, done_config_weight_buffer_loader;
+    wire done_config_pixel_buffer_loader, done_config_weight_buffer_loader, done_config_activation;
     assign done_config_pixel_buffer_loader_monitor = done_config_pixel_buffer_loader;
     assign done_config_weight_buffer_loader_monitor = done_config_weight_buffer_loader;
+    assign done_config_activation_monitor = done_config_activation;
 
     wire rd_en_pixel, rd_en_wgt, rd_en_bias;
     wire signed [DATA_WIDTH-1:0] rd_data_pixel, rd_data_wgt, rd_data_bias;
@@ -496,37 +497,36 @@ module top #(
         .start_activation(start_config_activation),
         .mode(activation_config),
 
-        .data_in_activation0(data_in_activation0),
-        .data_in_activation1(data_in_activation1),
-        .data_in_activation2(data_in_activation2),
-        .data_in_activation3(data_in_activation3),
+        .data_in_activation0(data_in_activation0), .data_in_activation1(data_in_activation1),
+        .data_in_activation2(data_in_activation2), .data_in_activation3(data_in_activation3),
         .data_in_activation4(data_in_activation4),
 
-        .data_out_activation0(data_out_activation0),
-        .data_out_activation1(data_out_activation1),
-        .data_out_activation2(data_out_activation2),
-        .data_out_activation3(data_out_activation3),
+        .data_out_activation0(data_out_activation0), .data_out_activation1(data_out_activation1),
+        .data_out_activation2(data_out_activation2), .data_out_activation3(data_out_activation3),
         .data_out_activation4(data_out_activation4),
 
-        .done_config_activation(),
+        .done_config_activation(done_config_activation),
 
-        .data_valid_activation0(data_valid_activation0),
-        .data_valid_activation1(data_valid_activation1),
-        .data_valid_activation2(data_valid_activation2),
-        .data_valid_activation3(data_valid_activation3),
+        .data_valid_activation0(data_valid_activation0), .data_valid_activation1(data_valid_activation1),
+        .data_valid_activation2(data_valid_activation2), .data_valid_activation3(data_valid_activation3),
         .data_valid_activation4(data_valid_activation4)
     );
 
     //Quantization
+    wire signed [47:0] data_in_quantization0, data_in_quantization1, data_in_quantization2, data_in_quantization3, data_in_quantization4;
+    wire signed [23:0] data_out_quantization0, data_out_quantization1, data_out_quantization2, data_out_quantization3, data_out_quantization4;
+    wire data_valid_quantization0, data_valid_quantization1, data_valid_quantization2, data_valid_quantization3, data_valid_quantization4;
     quantization_5x #(
         .DATA_IN_WIDTH(48),
         .DATA_OUT_WIDTH(24)
     )quantization_5x_inst(
-        .clk(), .rst(),
-        .en0(), .en1(), .en2(), .en3(), .en4(), 
-        .valid_in0(), .valid_in1(), .valid_in2(), .valid_in3(), .valid_in4(),
-        .data_in0(), .data_in1(), .data_in2(), .data_in3(), .data_in4(),
-        .data_out0(), .data_out1(), .data_out2(), .data_out3(), .data_out4(),
-        .valid_out0(), .valid_out1(), .valid_out2(), .valid_out3(), .valid_out4()
+        .clk(clk), .rst(rst),
+        .en0(1'b1), .en1(1'b1), .en2(1'b1), .en3(1'b1), .en4(1'b1), 
+        .mode(2'b11),
+        .valid_in0(data_valid_activation0), .valid_in1(data_valid_activation1), .valid_in2(data_valid_activation2), 
+        .valid_in3(data_valid_activation3), .valid_in4(data_valid_activation4),
+        .data_in0(data_in_quantization0), .data_in1(data_in_quantization1), .data_in2(data_in_quantization2), .data_in3(data_in_quantization3), .data_in4(data_in_quantization4),
+        .data_out0(data_out_quantization0), .data_out1(data_out_quantization1), .data_out2(data_out_quantization2), .data_out3(data_out_quantization3), .data_out4(data_out_quantization4),
+        .valid_out0(data_valid_quantization0), .valid_out1(data_valid_quantization0), .valid_out2(data_valid_quantization0), .valid_out3(data_valid_quantization0), .valid_out4(data_valid_quantization0)
     );
 endmodule
