@@ -64,7 +64,7 @@ module top_tb();
 
     logic done_config_pixel_buffer_loader_monitor;
     logic done_config_weight_buffer_loader_monitor;
-    logic done_config_activation;
+    logic done_config_activation_monitor;
     logic done_config_ofm;
 
     logic rd_en_pixel_monitor, rd_en_wgt_monitor, rd_en_bias_monitor;
@@ -105,6 +105,14 @@ module top_tb();
     logic signed [47:0] col1_out_monitor, col2_out_monitor, col3_out_monitor, col4_out_monitor, col5_out_monitor;
     logic col1_valid_monitor, col2_valid_monitor, col3_valid_monitor, col4_valid_monitor, col5_valid_monitor;
 
+    logic signed [47:0] bias_adder_result0_monitor, bias_adder_result1_monitor, bias_adder_result2_monitor, bias_adder_result3_monitor, bias_adder_result4_monitor;
+    logic signed bias_adder_valid0_monitor, bias_adder_valid1_monitor, bias_adder_valid2_monitor, bias_adder_valid3_monitor, bias_adder_valid4_monitor;
+
+    logic data_valid_activation0_monitor, data_valid_activation1_monitor, data_valid_activation2_monitor, data_valid_activation3_monitor, data_valid_activation4_monitor;
+    logic signed [47:0] data_out_activation0_monitor, data_out_activation1_monitor, data_out_activation2_monitor, data_out_activation3_monitor, data_out_activation4_monitor;
+
+    logic signed [23:0] data_out_quantization0_monitor, data_out_quantization1_monitor, data_out_quantization2_monitor, data_out_quantization3_monitor, data_out_quantization4_monitor;
+    logic data_valid_quantization0_monitor, data_valid_quantization1_monitor, data_valid_quantization2_monitor, data_valid_quantization3_monitor, data_valid_quantization4_monitor;
     top #(
         .DATA_WIDTH(`DATA_WIDTH),
         .AXI_BURST(`AXI_BURST),
@@ -176,7 +184,7 @@ module top_tb();
 
         .done_config_pixel_buffer_loader_monitor(done_config_pixel_buffer_loader_monitor),
         .done_config_weight_buffer_loader_monitor(done_config_weight_buffer_loader_monitor),
-        .done_config_activation(done_config_activation),
+        .done_config_activation_monitor(done_config_activation_monitor),
         .done_config_ofm(done_config_ofm),
 
         .rd_en_pixel_monitor(rd_en_pixel_monitor),
@@ -221,7 +229,43 @@ module top_tb();
         .c21_monitor(c21_monitor), .c22_monitor(c22_monitor), .c23_monitor(c23_monitor), .c24_monitor(c24_monitor), .c25_monitor(c25_monitor),
 
         .col1_out_monitor(col1_out_monitor), .col2_out_monitor(col2_out_monitor), .col3_out_monitor(col3_out_monitor), .col4_out_monitor(col4_out_monitor), .col5_out_monitor(col5_out_monitor),
-        .col1_valid_monitor(col1_valid_monitor), .col2_valid_monitor(col2_valid_monitor), .col3_valid_monitor(col3_valid_monitor), .col4_valid_monitor(col4_valid_monitor), .col5_valid_monitor(col5_valid_monitor)
+        .col1_valid_monitor(col1_valid_monitor), .col2_valid_monitor(col2_valid_monitor), .col3_valid_monitor(col3_valid_monitor), .col4_valid_monitor(col4_valid_monitor), .col5_valid_monitor(col5_valid_monitor),
+    
+        .bias_adder_result0_monitor(bias_adder_result0_monitor),
+        .bias_adder_result1_monitor(bias_adder_result1_monitor),
+        .bias_adder_result2_monitor(bias_adder_result2_monitor),
+        .bias_adder_result3_monitor(bias_adder_result3_monitor),
+        .bias_adder_result4_monitor(bias_adder_result4_monitor),
+
+        .bias_adder_valid0_monitor(bias_adder_valid0_monitor),
+        .bias_adder_valid1_monitor(bias_adder_valid1_monitor),
+        .bias_adder_valid2_monitor(bias_adder_valid2_monitor),
+        .bias_adder_valid3_monitor(bias_adder_valid3_monitor),
+        .bias_adder_valid4_monitor(bias_adder_valid4_monitor),
+
+        .data_valid_activation0_monitor(data_valid_activation0_monitor),
+        .data_valid_activation1_monitor(data_valid_activation1_monitor),
+        .data_valid_activation2_monitor(data_valid_activation2_monitor),
+        .data_valid_activation3_monitor(data_valid_activation3_monitor),
+        .data_valid_activation4_monitor(data_valid_activation4_monitor),
+
+        .data_out_activation0_monitor(data_out_activation0_monitor),
+        .data_out_activation1_monitor(data_out_activation1_monitor),
+        .data_out_activation2_monitor(data_out_activation2_monitor),
+        .data_out_activation3_monitor(data_out_activation3_monitor),
+        .data_out_activation4_monitor(data_out_activation4_monitor),
+
+        .data_out_quantization0_monitor(data_out_quantization0_monitor),
+        .data_out_quantization1_monitor(data_out_quantization1_monitor),
+        .data_out_quantization2_monitor(data_out_quantization2_monitor),
+        .data_out_quantization3_monitor(data_out_quantization3_monitor),
+        .data_out_quantization4_monitor(data_out_quantization4_monitor),
+
+        .data_valid_quantization0_monitor(data_valid_quantization0_monitor),
+        .data_valid_quantization1_monitor(data_valid_quantization1_monitor),
+        .data_valid_quantization2_monitor(data_valid_quantization2_monitor),
+        .data_valid_quantization3_monitor(data_valid_quantization3_monitor),
+        .data_valid_quantization4_monitor(data_valid_quantization4_monitor)
     );
 
     axi_stream_source_tb #(
@@ -277,17 +321,14 @@ module top_tb();
         kernel_size = 3'd3; stride = 3'd1;
         activation = 2'd1;
         number_kernel = 16'd6;
-        done_config_activation = 0; 
         done_config_ofm = 0;
         #13; rst = 1;
         #10; rst = 0;
         #10; start_system = 1;
         #10; start_system = 0;
         wait(done_config_pixel_buffer_loader_monitor == 1)
-        #10; done_config_activation = 1; 
-        done_config_ofm = 1;
-        #10; done_config_activation = 0; 
-        done_config_ofm = 0;
+        #10; done_config_ofm = 1;
+        #10; done_config_ofm = 0;
         wait(number_kernel_config_monitor == 15'd1)
         #5000; $finish;
     end

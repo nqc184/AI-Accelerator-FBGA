@@ -92,9 +92,11 @@ module top #(
     output signed [47:0] bias_adder_result0_monitor, bias_adder_result1_monitor, bias_adder_result2_monitor, bias_adder_result3_monitor, bias_adder_result4_monitor,
     output signed bias_adder_valid0_monitor, bias_adder_valid1_monitor, bias_adder_valid2_monitor, bias_adder_valid3_monitor, bias_adder_valid4_monitor,
 
-    output signed [47:0] data_in_activation0_monitor, data_in_activation1_monitor, data_in_activation2_monitor, data_in_activation3_monitor, data_in_activation4_monitor,
     output data_valid_activation0_monitor, data_valid_activation1_monitor, data_valid_activation2_monitor, data_valid_activation3_monitor, data_valid_activation4_monitor,
-    output signed [47:0] data_out_activation0_monitor, data_out_activation1_monitor, data_out_activation2_monitor, data_out_activation3_monitor, data_out_activation4_monitor
+    output signed [47:0] data_out_activation0_monitor, data_out_activation1_monitor, data_out_activation2_monitor, data_out_activation3_monitor, data_out_activation4_monitor,
+
+    output signed [23:0] data_out_quantization0_monitor, data_out_quantization1_monitor, data_out_quantization2_monitor, data_out_quantization3_monitor, data_out_quantization4_monitor,
+    output data_valid_quantization0_monitor, data_valid_quantization1_monitor, data_valid_quantization2_monitor, data_valid_quantization3_monitor, data_valid_quantization4_monitor
 );
     //System Controller
     wire start_load, start_npu;
@@ -466,14 +468,7 @@ module top #(
     );
 
     //Activation
-    wire signed [47:0] data_in_activation0, data_in_activation1, data_in_activation2, data_in_activation3, data_in_activation4;
     wire signed [47:0] data_out_activation0, data_out_activation1, data_out_activation2, data_out_activation3, data_out_activation4;
-    assign data_in_activation0_monitor = data_in_activation0; 
-    assign data_in_activation1_monitor = data_in_activation1;
-    assign data_in_activation2_monitor = data_in_activation2; 
-    assign data_in_activation3_monitor = data_in_activation3; 
-    assign data_in_activation4_monitor = data_in_activation4;
-
     assign data_out_activation0_monitor = data_out_activation0; 
     assign data_out_activation1_monitor = data_out_activation1; 
     assign data_out_activation2_monitor = data_out_activation2; 
@@ -497,9 +492,9 @@ module top #(
         .start_activation(start_config_activation),
         .mode(activation_config),
 
-        .data_in_activation0(data_in_activation0), .data_in_activation1(data_in_activation1),
-        .data_in_activation2(data_in_activation2), .data_in_activation3(data_in_activation3),
-        .data_in_activation4(data_in_activation4),
+        .data_in_activation0(bias_adder_result0), .data_in_activation1(bias_adder_result1),
+        .data_in_activation2(bias_adder_result2), .data_in_activation3(bias_adder_result3),
+        .data_in_activation4(bias_adder_result4),
 
         .data_out_activation0(data_out_activation0), .data_out_activation1(data_out_activation1),
         .data_out_activation2(data_out_activation2), .data_out_activation3(data_out_activation3),
@@ -513,9 +508,18 @@ module top #(
     );
 
     //Quantization
-    wire signed [47:0] data_in_quantization0, data_in_quantization1, data_in_quantization2, data_in_quantization3, data_in_quantization4;
     wire signed [23:0] data_out_quantization0, data_out_quantization1, data_out_quantization2, data_out_quantization3, data_out_quantization4;
     wire data_valid_quantization0, data_valid_quantization1, data_valid_quantization2, data_valid_quantization3, data_valid_quantization4;
+    assign data_out_quantization0_monitor = data_out_quantization0;
+    assign data_out_quantization1_monitor = data_out_quantization1;
+    assign data_out_quantization2_monitor = data_out_quantization2;
+    assign data_out_quantization3_monitor = data_out_quantization3;
+    assign data_out_quantization4_monitor = data_out_quantization4;
+    assign data_valid_quantization0_monitor = data_valid_quantization0;
+    assign data_valid_quantization1_monitor = data_valid_quantization1;
+    assign data_valid_quantization2_monitor = data_valid_quantization2;
+    assign data_valid_quantization3_monitor = data_valid_quantization3;
+    assign data_valid_quantization4_monitor = data_valid_quantization4;
     quantization_5x #(
         .DATA_IN_WIDTH(48),
         .DATA_OUT_WIDTH(24)
@@ -525,7 +529,7 @@ module top #(
         .mode(2'b11),
         .valid_in0(data_valid_activation0), .valid_in1(data_valid_activation1), .valid_in2(data_valid_activation2), 
         .valid_in3(data_valid_activation3), .valid_in4(data_valid_activation4),
-        .data_in0(data_in_quantization0), .data_in1(data_in_quantization1), .data_in2(data_in_quantization2), .data_in3(data_in_quantization3), .data_in4(data_in_quantization4),
+        .data_in0(data_out_activation0), .data_in1(data_out_activation1), .data_in2(data_out_activation2), .data_in3(data_out_activation3), .data_in4(data_out_activation4),
         .data_out0(data_out_quantization0), .data_out1(data_out_quantization1), .data_out2(data_out_quantization2), .data_out3(data_out_quantization3), .data_out4(data_out_quantization4),
         .valid_out0(data_valid_quantization0), .valid_out1(data_valid_quantization0), .valid_out2(data_valid_quantization0), .valid_out3(data_valid_quantization0), .valid_out4(data_valid_quantization0)
     );
