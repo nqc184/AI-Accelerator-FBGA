@@ -74,6 +74,7 @@ module top #(
     output [599:0] window_packed_monitor, weight_packed_monitor,
     output [599:0] window_reg_0, window_reg_1, window_reg_2, window_reg_3, window_reg_4,
     output [599:0] wgt_reg_0, wgt_reg_1, wgt_reg_2, wgt_reg_3, wgt_reg_4,
+    output signed [47:0] bias_reg_0, bias_reg_1, bias_reg_2, bias_reg_3, bias_reg_4,
     output [2:0] window_cnt_monitor, wgt_cnt_monitor, bias_cnt_monitor,
 
     output [5:0] cycle_out_monitor,
@@ -152,7 +153,7 @@ module top #(
         .done(wgt_done)
     );
  
-    axi_unpack_writer #(.DATA_WIDTH(DATA_WIDTH), .ADDR_WIDTH(BIAS_ADDR_WIDTH)) uw_bias (
+    axi_unpack_writer #(.DATA_WIDTH(DATA_WIDTH*2), .ADDR_WIDTH(BIAS_ADDR_WIDTH)) uw_bias (
         .clk(clk), .rst(rst),
         .s_axis_tdata(bias_tdata), .s_axis_tvalid(bias_tvalid),
         .s_axis_tlast(bias_tlast), .s_axis_tready(bias_tready),
@@ -440,32 +441,25 @@ module top #(
         .done(done_calc)
     );
 
-     //Bias Adder 5x48
-    wire [47:0] bias_adder_result0, bias_adder_result1, bias_adder_result2, bias_adder_result3, bias_adder_result4;
-    wire bias_adder_valid0, bias_adder_valid1, bias_adder_valid2, bias_adder_valid3, bias_adder_valid4; 
-    assign bias_adder_result0_monitor = bias_adder_result0;
-    assign bias_adder_result1_monitor = bias_adder_result1;
-    assign bias_adder_result2_monitor = bias_adder_result2;
-    assign bias_adder_result3_monitor = bias_adder_result3;
-    assign bias_adder_result4_monitor = bias_adder_result4;
-    assign bias_adder_valid0_monitor = bias_adder_valid0;
-    assign bias_adder_valid1_monitor = bias_adder_valid1;
-    assign bias_adder_valid2_monitor = bias_adder_valid2;
-    assign bias_adder_valid3_monitor = bias_adder_valid3;
-    assign bias_adder_valid4_monitor = bias_adder_valid4;
-    bias_adder_5x48 bias_adder(
+    //Reg File For Bias
+    wire [47:0] bias_0, bias_1, bias_2, bias_3, bias_4;
+    assign bias_reg_0 = bias_0;
+    assign bias_reg_1 = bias_1;
+    assign bias_reg_2 = bias_2;
+    assign bias_reg_3 = bias_3;
+    assign bias_reg_4 = bias_4;
+    reg_file_5x48 bias_reg_file(
         .clk(clk), .rst(rst), .clr(clear_bias_reg),
 
-        .bias_wr_en(valid_bias),
-        .bias_wr_sel(bias_cnt_monitor),
-        .bias_wr_data(rd_data_bias),
+        .wr_en(valid_bias),
+        .wr_sel(bias_cnt_monitor),
+        .wr_data(rd_data_bias),
 
-        .data_in0(col1_out), .data_in1(col2_out), .data_in2(col3_out), .data_in3(col4_out), .data_in4(col5_out),
-        .data_valid0(col1_valid), .data_valid1(col2_valid), .data_valid2(col3_valid), .data_valid3(col4_valid), .data_valid4(col5_valid),
-
-        .result0(bias_adder_result0), .result1(bias_adder_result1), .result2(bias_adder_result2), .result3(bias_adder_result3), .result4(bias_adder_result4),
-        .result_valid0(bias_adder_valid0), .result_valid1(bias_adder_valid1), .result_valid2(bias_adder_valid2), .result_valid3(bias_adder_valid3), .result_valid4(bias_adder_valid4)
+        .reg0(bias_0), .reg1(bias_1), .reg2(bias_2), .reg3(bias_3), .reg4(bias_4)
     );
+
+    //Bias Adder 5x48
+    
 
     //Activation
     wire signed [47:0] data_out_activation0, data_out_activation1, data_out_activation2, data_out_activation3, data_out_activation4;
@@ -531,6 +525,6 @@ module top #(
         .valid_in3(data_valid_activation3), .valid_in4(data_valid_activation4),
         .data_in0(data_out_activation0), .data_in1(data_out_activation1), .data_in2(data_out_activation2), .data_in3(data_out_activation3), .data_in4(data_out_activation4),
         .data_out0(data_out_quantization0), .data_out1(data_out_quantization1), .data_out2(data_out_quantization2), .data_out3(data_out_quantization3), .data_out4(data_out_quantization4),
-        .valid_out0(data_valid_quantization0), .valid_out1(data_valid_quantization0), .valid_out2(data_valid_quantization0), .valid_out3(data_valid_quantization0), .valid_out4(data_valid_quantization0)
+        .valid_out0(data_valid_quantization0), .valid_out1(data_valid_quantization1), .valid_out2(data_valid_quantization2), .valid_out3(data_valid_quantization3), .valid_out4(data_valid_quantization4)
     );
 endmodule
