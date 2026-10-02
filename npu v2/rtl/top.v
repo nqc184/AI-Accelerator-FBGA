@@ -88,7 +88,12 @@ module top #(
     output signed [47:0] c21_monitor, c22_monitor, c23_monitor, c24_monitor, c25_monitor,
 
     output signed [47:0] col1_out_monitor, col2_out_monitor, col3_out_monitor, col4_out_monitor, col5_out_monitor,
-    output col1_valid_monitor, col2_valid_monitor, col3_valid_monitor, col4_valid_monitor, col5_valid_monitor
+    output col1_valid_monitor, col2_valid_monitor, col3_valid_monitor, col4_valid_monitor, col5_valid_monitor,
+
+    output signed [47:0] bias_reg0_monitor, bias_reg1_monitor, bias_reg2_monitor, bias_reg3_monitor, bias_reg4_monitor,
+    output signed [47:0] bias_adder_result0_monitor, bias_adder_result1_monitor, bias_adder_result2_monitor, bias_adder_result3_monitor, bias_adder_result4_monitor,
+    output valid_bias_adder_result0_monitor, valid_bias_adder_result1_monitor, valid_bias_adder_result2_monitor, valid_bias_adder_result3_monitor, valid_bias_adder_result4_monitor
+    
 );
     //System Controller
     wire start_load, start_npu;
@@ -433,6 +438,18 @@ module top #(
     );
 
     //Bias Adder 5x48
+    wire signed [47:0] bias_adder_result0, bias_adder_result1, bias_adder_result2, bias_adder_result3, bias_adder_result4;
+    wire valid_bias_adder_result0, valid_bias_adder_result1, valid_bias_adder_result2, valid_bias_adder_result3, valid_bias_adder_result4;
+    assign bias_adder_result0_monitor = bias_adder_result0;
+    assign bias_adder_result1_monitor = bias_adder_result1;
+    assign bias_adder_result2_monitor = bias_adder_result2;
+    assign bias_adder_result3_monitor = bias_adder_result3;
+    assign bias_adder_result4_monitor = bias_adder_result4;
+    assign valid_bias_adder_result0_monitor = valid_bias_adder_result0;
+    assign valid_bias_adder_result1_monitor = valid_bias_adder_result1;
+    assign valid_bias_adder_result2_monitor = valid_bias_adder_result2;
+    assign valid_bias_adder_result3_monitor = valid_bias_adder_result3;
+    assign valid_bias_adder_result4_monitor = valid_bias_adder_result4;
     bias_adder_unit bias_adder_unit_inst (
         .clk(clk),
         .rst(rst),
@@ -440,15 +457,15 @@ module top #(
         .col1_out(col1_out), .col2_out(col2_out), .col3_out(col3_out), .col4_out(col4_out), .col5_out(col5_out),
         .bias_in(rd_data_bias),
         .sel(bias_cnt_monitor),
-        .bias_reg0_monitor(), .bias_reg1_monitor(), .bias_reg2_monitor(),
-        .bias_reg3_monitor(), .bias_reg4_monitor(),
-        .bias_adder_result0(), .bias_adder_result1(), .bias_adder_result2(), 
-        .bias_adder_result3(), .bias_adder_result4(),
-        .valid_bias_adder_result0(),
-        .valid_bias_adder_result1(),
-        .valid_bias_adder_result2(),
-        .valid_bias_adder_result3(),
-        .valid_bias_adder_result4()
+        .bias_reg0_monitor(bias_reg0_monitor), .bias_reg1_monitor(bias_reg1_monitor), .bias_reg2_monitor(bias_reg2_monitor),
+        .bias_reg3_monitor(bias_reg3_monitor), .bias_reg4_monitor(bias_reg4_monitor),
+        .bias_adder_result0(bias_adder_result0), .bias_adder_result1(bias_adder_result1), .bias_adder_result2(bias_adder_result2), 
+        .bias_adder_result3(bias_adder_result3), .bias_adder_result4(bias_adder_result4),
+        .valid_bias_adder_result0(valid_bias_adder_result0),
+        .valid_bias_adder_result1(valid_bias_adder_result1),
+        .valid_bias_adder_result2(valid_bias_adder_result2),
+        .valid_bias_adder_result3(valid_bias_adder_result3),
+        .valid_bias_adder_result4(valid_bias_adder_result4)
     );
 
     //Activation
@@ -459,7 +476,9 @@ module top #(
         .clk(clk), .rst(rst),
         .en0(1'b1), .en1(1'b1), .en2(1'b1), .en3(1'b1), .en4(1'b1),
 
-        .valid_in0(), .valid_in1(), .valid_in2(), .valid_in3(), .valid_in4(),
+        .valid_in0(valid_bias_adder_result0), .valid_in1(valid_bias_adder_result1), 
+        .valid_in2(valid_bias_adder_result2), .valid_in3(valid_bias_adder_result3), 
+        .valid_in4(valid_bias_adder_result4),
 
         .start_activation(),
         .mode(),
