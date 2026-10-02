@@ -3,13 +3,13 @@
 module bias_adder #(
     parameter DATA_WIDTH = 48
 )(
-    input                           clk,
-    input                           rst,
-    input                           en,
+    input clk,
+    input rst,
+    input en,
 
-    input                           valid_in,
-    input      signed [DATA_WIDTH-1:0] data_in,
-    input      signed [DATA_WIDTH-1:0] bias,
+    input valid_in,
+    input signed [DATA_WIDTH-1:0] data_in,
+    input signed [DATA_WIDTH-1:0] bias,
 
     output reg signed [DATA_WIDTH-1:0] data_out,
     output reg                      valid_out
