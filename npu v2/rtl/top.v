@@ -94,6 +94,11 @@ module top #(
     output signed [47:0] bias_adder_result0_monitor, bias_adder_result1_monitor, bias_adder_result2_monitor, bias_adder_result3_monitor, bias_adder_result4_monitor,
     output valid_bias_adder_result0_monitor, valid_bias_adder_result1_monitor, valid_bias_adder_result2_monitor, valid_bias_adder_result3_monitor, valid_bias_adder_result4_monitor
     
+    output signed [47:0] activation_result0_monitor, activation_result1_monitor, activation_result2_monitor, activation_result3_monitor, activation_result4_monitor,
+    output valid_activation_result0_monitor, valid_activation_result1_monitor, valid_activation_result2_monitor, valid_activation_result3_monitor, valid_activation_result4_monitor,
+
+    output signed [23:0] quantization_result0_monitor, quantization_result1_monitor, quantization_result2_monitor, quantization_result3_monitor, quantization_result4_monitor,
+    output valid_quantization_result0_monitor, valid_quantization_result1_monitor, valid_quantization_result2_monitor, valid_quantization_result3_monitor, valid_quantization_result4_monitor
 );
     //System Controller
     wire start_load, start_npu;
@@ -469,6 +474,18 @@ module top #(
     );
 
     //Activation
+    wire [47:0] activation_result0, activation_result1, activation_result2, activation_result3, activation_result4;
+    wire valid_activation_result0, valid_activation_result1, valid_activation_result2, valid_activation_result3, valid_activation_result4;
+    assign activation_result0_monitor = activation_result0;
+    assign activation_result1_monitor = activation_result1;
+    assign activation_result2_monitor = activation_result2;
+    assign activation_result3_monitor = activation_result3;
+    assign activation_result4_monitor = activation_result4;
+    assign valid_activation_result0_monitor = valid_activation_result0;
+    assign valid_activation_result1_monitor = valid_activation_result1;
+    assign valid_activation_result2_monitor = valid_activation_result2;
+    assign valid_activation_result3_monitor = valid_activation_result3;
+    assign valid_activation_result4_monitor = valid_activation_result4;
     activation_5x #(
         .DATA_WIDTH(48),
         .LEAK_SHIFT(4)
@@ -480,25 +497,37 @@ module top #(
         .valid_in2(valid_bias_adder_result2), .valid_in3(valid_bias_adder_result3), 
         .valid_in4(valid_bias_adder_result4),
 
-        .start_activation(),
-        .mode(),
+        .start_activation(start_config_activation),
+        .mode(activation_config),
 
-        .data_in_activation0(), .data_in_activation1(),
-        .data_in_activation2(), .data_in_activation3(),
-        .data_in_activation4(),
+        .data_in_activation0(bias_adder_result0), .data_in_activation1(bias_adder_result1),
+        .data_in_activation2(bias_adder_result2), .data_in_activation3(bias_adder_result3),
+        .data_in_activation4(bias_adder_result4),
 
-        .data_out_activation0(), .data_out_activation1(),
-        .data_out_activation2(), .data_out_activation3(),
-        .data_out_activation4(),
+        .data_out_activation0(activation_result0), .data_out_activation1(activation_result1),
+        .data_out_activation2(activation_result2), .data_out_activation3(activation_result3),
+        .data_out_activation4(activation_result4),
 
-        .done_config_activation(),
+        .done_config_activation(done_config_activation),
 
-        .data_valid_activation0(), .data_valid_activation1(),
-        .data_valid_activation2(), .data_valid_activation3(),
-        .data_valid_activation4()
+        .data_valid_activation0(valid_activation_result0), .data_valid_activation1(valid_activation_result1),
+        .data_valid_activation2(valid_activation_result2), .data_valid_activation3(valid_activation_result3),
+        .data_valid_activation4(valid_activation_result4)
     );
 
     //Quantization
+    wire signed [23:0] quantization_result0, quantization_result1, quantization_result2, quantization_result3, quantization_result4;
+    wire valid_quantization_result0, valid_quantization_result1, valid_quantization_result2, valid_quantization_result3, valid_quantization_result4;
+    assign quantization_result0_monitor = quantization_result0;
+    assign quantization_result1_monitor = quantization_result1;
+    assign quantization_result2_monitor = quantization_result2;
+    assign quantization_result3_monitor = quantization_result3;
+    assign quantization_result4_monitor = quantization_result4;
+    assign valid_quantization_result0_monitor = valid_quantization_result0;
+    assign valid_quantization_result1_monitor = valid_quantization_result1;
+    assign valid_quantization_result2_monitor = valid_quantization_result2;
+    assign valid_quantization_result3_monitor = valid_quantization_result3;
+    assign valid_quantization_result4_monitor = valid_quantization_result4;
     quantization_5x #(
         .DATA_IN_WIDTH(48),
         .DATA_OUT_WIDTH(24)
@@ -506,10 +535,10 @@ module top #(
         .clk(clk), .rst(rst),
         .en0(1'b1), .en1(1'b1), .en2(1'b1), .en3(1'b1), .en4(1'b1), 
         .mode(2'b11),
-        .valid_in0(), .valid_in1(), .valid_in2(), 
-        .valid_in3(), .valid_in4(),
-        .data_in0(), .data_in1(), .data_in2(), .data_in3(), .data_in4(),
-        .data_out0(), .data_out1(), .data_out2(), .data_out3(), .data_out4(),
-        .valid_out0(), .valid_out1(), .valid_out2(), .valid_out3(), .valid_out4()
+        .valid_in0(valid_activation_result0), .valid_in1(valid_activation_result1), .valid_in2(valid_activation_result2), 
+        .valid_in3(valid_activation_result3), .valid_in4(valid_activation_result4),
+        .data_in0(activation_result0), .data_in1(activation_result1), .data_in2(activation_result2), .data_in3(activation_result3), .data_in4(activation_result4),
+        .data_out0(quantization_result0), .data_out1(quantization_result1), .data_out2(quantization_result2), .data_out3(quantization_result3), .data_out4(quantization_result4),
+        .valid_out0(valid_quantization_result0), .valid_out1(valid_quantization_result1), .valid_out2(valid_quantization_result2), .valid_out3(valid_quantization_result3), .valid_out4(valid_quantization_result4)
     );
 endmodule
