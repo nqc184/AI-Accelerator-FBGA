@@ -105,14 +105,15 @@ module top_tb();
     logic signed [47:0] col1_out_monitor, col2_out_monitor, col3_out_monitor, col4_out_monitor, col5_out_monitor;
     logic col1_valid_monitor, col2_valid_monitor, col3_valid_monitor, col4_valid_monitor, col5_valid_monitor;
 
+    logic signed [47:0] bias_reg0_monitor, bias_reg1_monitor, bias_reg2_monitor, bias_reg3_monitor, bias_reg4_monitor;
     logic signed [47:0] bias_adder_result0_monitor, bias_adder_result1_monitor, bias_adder_result2_monitor, bias_adder_result3_monitor, bias_adder_result4_monitor;
-    logic signed bias_adder_valid0_monitor, bias_adder_valid1_monitor, bias_adder_valid2_monitor, bias_adder_valid3_monitor, bias_adder_valid4_monitor;
+    logic valid_bias_adder_result0_monitor, valid_bias_adder_result1_monitor, valid_bias_adder_result2_monitor, valid_bias_adder_result3_monitor, valid_bias_adder_result4_monitor;
+    
+    logic signed [47:0] activation_result0_monitor, activation_result1_monitor, activation_result2_monitor, activation_result3_monitor, activation_result4_monitor;
+    logic valid_activation_result0_monitor, valid_activation_result1_monitor, valid_activation_result2_monitor, valid_activation_result3_monitor, valid_activation_result4_monitor;
 
-    logic data_valid_activation0_monitor, data_valid_activation1_monitor, data_valid_activation2_monitor, data_valid_activation3_monitor, data_valid_activation4_monitor;
-    logic signed [47:0] data_out_activation0_monitor, data_out_activation1_monitor, data_out_activation2_monitor, data_out_activation3_monitor, data_out_activation4_monitor;
-
-    logic signed [23:0] data_out_quantization0_monitor, data_out_quantization1_monitor, data_out_quantization2_monitor, data_out_quantization3_monitor, data_out_quantization4_monitor;
-    logic data_valid_quantization0_monitor, data_valid_quantization1_monitor, data_valid_quantization2_monitor, data_valid_quantization3_monitor, data_valid_quantization4_monitor;
+    logic signed [23:0] quantization_result0_monitor, quantization_result1_monitor, quantization_result2_monitor, quantization_result3_monitor, quantization_result4_monitor;
+    logic valid_quantization_result0_monitor, valid_quantization_result1_monitor, valid_quantization_result2_monitor, valid_quantization_result3_monitor, valid_quantization_result4_monitor;
     top #(
         .DATA_WIDTH(`DATA_WIDTH),
         .AXI_BURST(`AXI_BURST),
@@ -231,41 +232,15 @@ module top_tb();
         .col1_out_monitor(col1_out_monitor), .col2_out_monitor(col2_out_monitor), .col3_out_monitor(col3_out_monitor), .col4_out_monitor(col4_out_monitor), .col5_out_monitor(col5_out_monitor),
         .col1_valid_monitor(col1_valid_monitor), .col2_valid_monitor(col2_valid_monitor), .col3_valid_monitor(col3_valid_monitor), .col4_valid_monitor(col4_valid_monitor), .col5_valid_monitor(col5_valid_monitor),
     
-        .bias_adder_result0_monitor(bias_adder_result0_monitor),
-        .bias_adder_result1_monitor(bias_adder_result1_monitor),
-        .bias_adder_result2_monitor(bias_adder_result2_monitor),
-        .bias_adder_result3_monitor(bias_adder_result3_monitor),
-        .bias_adder_result4_monitor(bias_adder_result4_monitor),
+        .bias_reg0_monitor(bias_reg0_monitor), .bias_reg1_monitor(bias_reg1_monitor), .bias_reg2_monitor(bias_reg2_monitor), .bias_reg3_monitor(bias_reg3_monitor), .bias_reg4_monitor(bias_reg4_monitor),
+        .bias_adder_result0_monitor(bias_adder_result0_monitor), .bias_adder_result1_monitor(bias_adder_result1_monitor), .bias_adder_result2_monitor(bias_adder_result2_monitor), .bias_adder_result3_monitor(bias_adder_result3_monitor), .bias_adder_result4_monitor(bias_adder_result4_monitor),
+        .valid_bias_adder_result0_monitor(valid_bias_adder_result0_monitor), .valid_bias_adder_result1_monitor(valid_bias_adder_result1_monitor), .valid_bias_adder_result2_monitor(valid_bias_adder_result2_monitor), .valid_bias_adder_result3_monitor(valid_bias_adder_result3_monitor), .valid_bias_adder_result4_monitor(valid_bias_adder_result4_monitor),
+        
+        .activation_result0_monitor(activation_result0_monitor), .activation_result1_monitor(activation_result1_monitor), .activation_result2_monitor(activation_result2_monitor), .activation_result3_monitor(activation_result3_monitor), .activation_result4_monitor(activation_result4_monitor),
+        .valid_activation_result0_monitor(valid_activation_result0_monitor), .valid_activation_result1_monitor(valid_activation_result1_monitor), .valid_activation_result2_monitor(valid_activation_result2_monitor), .valid_activation_result3_monitor(valid_activation_result3_monitor), .valid_activation_result4_monitor(valid_activation_result4_monitor),
 
-        .bias_adder_valid0_monitor(bias_adder_valid0_monitor),
-        .bias_adder_valid1_monitor(bias_adder_valid1_monitor),
-        .bias_adder_valid2_monitor(bias_adder_valid2_monitor),
-        .bias_adder_valid3_monitor(bias_adder_valid3_monitor),
-        .bias_adder_valid4_monitor(bias_adder_valid4_monitor),
-
-        .data_valid_activation0_monitor(data_valid_activation0_monitor),
-        .data_valid_activation1_monitor(data_valid_activation1_monitor),
-        .data_valid_activation2_monitor(data_valid_activation2_monitor),
-        .data_valid_activation3_monitor(data_valid_activation3_monitor),
-        .data_valid_activation4_monitor(data_valid_activation4_monitor),
-
-        .data_out_activation0_monitor(data_out_activation0_monitor),
-        .data_out_activation1_monitor(data_out_activation1_monitor),
-        .data_out_activation2_monitor(data_out_activation2_monitor),
-        .data_out_activation3_monitor(data_out_activation3_monitor),
-        .data_out_activation4_monitor(data_out_activation4_monitor),
-
-        .data_out_quantization0_monitor(data_out_quantization0_monitor),
-        .data_out_quantization1_monitor(data_out_quantization1_monitor),
-        .data_out_quantization2_monitor(data_out_quantization2_monitor),
-        .data_out_quantization3_monitor(data_out_quantization3_monitor),
-        .data_out_quantization4_monitor(data_out_quantization4_monitor),
-
-        .data_valid_quantization0_monitor(data_valid_quantization0_monitor),
-        .data_valid_quantization1_monitor(data_valid_quantization1_monitor),
-        .data_valid_quantization2_monitor(data_valid_quantization2_monitor),
-        .data_valid_quantization3_monitor(data_valid_quantization3_monitor),
-        .data_valid_quantization4_monitor(data_valid_quantization4_monitor)
+        .quantization_result0_monitor(quantization_result0_monitor), .quantization_result1_monitor(quantization_result1_monitor), .quantization_result2_monitor(quantization_result2_monitor), .quantization_result3_monitor(quantization_result3_monitor), .quantization_result4_monitor(quantization_result4_monitor),
+        .valid_quantization_result0_monitor(valid_quantization_result0_monitor), .valid_quantization_result1_monitor(valid_quantization_result1_monitor), .valid_quantization_result2_monitor(valid_quantization_result2_monitor), .valid_quantization_result3_monitor(valid_quantization_result3_monitor), .valid_quantization_result4_monitor(valid_quantization_result4_monitor)
     );
 
     axi_stream_source_tb #(

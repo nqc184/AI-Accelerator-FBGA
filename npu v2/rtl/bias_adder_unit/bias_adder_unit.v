@@ -3,6 +3,7 @@ module bias_adder_unit (
     input col1_valid, col2_valid, col3_valid, col4_valid, col5_valid,
     input signed [47:0] col1_out, col2_out, col3_out, col4_out, col5_out,
     input signed [47:0] bias_in,
+    input [2:0] npu_state,
     input [2:0] sel,
     output signed [47:0] bias_reg0_monitor, bias_reg1_monitor, bias_reg2_monitor, bias_reg3_monitor, bias_reg4_monitor,
     output signed [47:0] bias_adder_result0, bias_adder_result1, bias_adder_result2, bias_adder_result3, bias_adder_result4,
@@ -23,11 +24,11 @@ module bias_adder_unit (
             bias_reg4 <= 0;
         end
         else begin
-            if(sel == 3'd0) bias_reg0 <= bias_in;
-            else if(sel == 3'd1) bias_reg1 <= bias_in;
-            else if(sel == 3'd2) bias_reg2 <= bias_in;
-            else if(sel == 3'd3) bias_reg3 <= bias_in;
-            else if(sel == 3'd4) bias_reg4 <= bias_in;
+            if(sel == 3'd1) bias_reg0 <= bias_in;
+            else if(sel == 3'd2) bias_reg1 <= bias_in;
+            else if(sel == 3'd3) bias_reg2 <= bias_in;
+            else if(sel == 3'd4) bias_reg3 <= bias_in;
+            else if(sel == 3'd5) bias_reg4 <= bias_in;
         end
     end
 

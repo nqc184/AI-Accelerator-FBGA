@@ -62,7 +62,8 @@ module top #(
 
     output rd_en_pixel_monitor, rd_en_wgt_monitor, rd_en_bias_monitor,
     output valid_pixel_monitor, valid_wgt_monitor, valid_bias_monitor, 
-    output signed [DATA_WIDTH-1:0] rd_data_pixel_monitor, rd_data_wgt_monitor, rd_data_bias_monitor,
+    output signed [DATA_WIDTH-1:0] rd_data_pixel_monitor, rd_data_wgt_monitor,
+    output signed [(DATA_WIDTH*2)-1:0] rd_data_bias_monitor,
     output [IFM_ADDR_WIDTH-1:0] rd_addr_pixel_monitor,
     output [WGT_ADDR_WIDTH-1:0] rd_addr_wgt_monitor,
     output [BIAS_ADDR_WIDTH-1:0] rd_addr_bias_monitor,
@@ -92,7 +93,7 @@ module top #(
 
     output signed [47:0] bias_reg0_monitor, bias_reg1_monitor, bias_reg2_monitor, bias_reg3_monitor, bias_reg4_monitor,
     output signed [47:0] bias_adder_result0_monitor, bias_adder_result1_monitor, bias_adder_result2_monitor, bias_adder_result3_monitor, bias_adder_result4_monitor,
-    output valid_bias_adder_result0_monitor, valid_bias_adder_result1_monitor, valid_bias_adder_result2_monitor, valid_bias_adder_result3_monitor, valid_bias_adder_result4_monitor
+    output valid_bias_adder_result0_monitor, valid_bias_adder_result1_monitor, valid_bias_adder_result2_monitor, valid_bias_adder_result3_monitor, valid_bias_adder_result4_monitor,
     
     output signed [47:0] activation_result0_monitor, activation_result1_monitor, activation_result2_monitor, activation_result3_monitor, activation_result4_monitor,
     output valid_activation_result0_monitor, valid_activation_result1_monitor, valid_activation_result2_monitor, valid_activation_result3_monitor, valid_activation_result4_monitor,
@@ -133,7 +134,7 @@ module top #(
  
     wire bias_unpack_wr_en;
     wire [BIAS_ADDR_WIDTH-1:0] bias_unpack_wr_addr;
-    wire signed [DATA_WIDTH-1:0] bias_unpack_wr_data;
+    wire signed [(DATA_WIDTH*2)-1:0] bias_unpack_wr_data;
     assign bias_unpack_en_monitor   = bias_unpack_wr_en;
     assign bias_unpack_data_monitor = bias_unpack_wr_data;
     assign bias_unpack_wr_addr_monitor = bias_unpack_wr_addr;
@@ -189,7 +190,8 @@ module top #(
     assign done_config_activation_monitor = done_config_activation;
 
     wire rd_en_pixel, rd_en_wgt, rd_en_bias;
-    wire signed [DATA_WIDTH-1:0] rd_data_pixel, rd_data_wgt, rd_data_bias;
+    wire signed [DATA_WIDTH-1:0] rd_data_pixel, rd_data_wgt;
+    wire signed [(DATA_WIDTH*2)-1:0] rd_data_bias;
     wire [IFM_ADDR_WIDTH-1:0] rd_addr_pixel;
     wire [WGT_ADDR_WIDTH-1:0] rd_addr_wgt;
     wire [BIAS_ADDR_WIDTH-1:0] rd_addr_bias;
@@ -461,6 +463,7 @@ module top #(
         .col1_valid(col1_valid), .col2_valid(col2_valid), .col3_valid(col3_valid), .col4_valid(col4_valid), .col5_valid(col5_valid),
         .col1_out(col1_out), .col2_out(col2_out), .col3_out(col3_out), .col4_out(col4_out), .col5_out(col5_out),
         .bias_in(rd_data_bias),
+        .npu_state(current_state_monitor),
         .sel(bias_cnt_monitor),
         .bias_reg0_monitor(bias_reg0_monitor), .bias_reg1_monitor(bias_reg1_monitor), .bias_reg2_monitor(bias_reg2_monitor),
         .bias_reg3_monitor(bias_reg3_monitor), .bias_reg4_monitor(bias_reg4_monitor),
