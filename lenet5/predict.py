@@ -5,28 +5,13 @@ import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 
-
-# ============================================================
-# PATH
-# ============================================================
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 MODEL_PATH = os.path.join(BASE_DIR, "output", "lenet5_cat_dog.pth")
 
-
-# ============================================================
-# DEVICE
-# ============================================================
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 print("Device:", device)
-
-
-# ============================================================
-# TRANSFORM
-# ============================================================
 
 transform = transforms.Compose([
     transforms.Grayscale(num_output_channels=1),
@@ -34,11 +19,6 @@ transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.5,), (0.5,))
 ])
-
-
-# ============================================================
-# DATASET
-# ============================================================
 
 test_dataset = datasets.ImageFolder(
     root=os.path.join(DATA_DIR, "test"),
@@ -53,11 +33,6 @@ test_loader = DataLoader(
 
 print("Classes:", test_dataset.classes)
 print("Number of test images:", len(test_dataset))
-
-
-# ============================================================
-# LENET-5
-# ============================================================
 
 class LeNet5(nn.Module):
 
@@ -101,11 +76,6 @@ class LeNet5(nn.Module):
 
         return x
 
-
-# ============================================================
-# LOAD MODEL
-# ============================================================
-
 model = LeNet5().to(device)
 
 model.load_state_dict(
@@ -115,11 +85,6 @@ model.load_state_dict(
 model.eval()
 
 print("Model loaded successfully.")
-
-
-# ============================================================
-# PREDICTION
-# ============================================================
 
 images, labels = next(iter(test_loader))
 
@@ -134,18 +99,12 @@ with torch.no_grad():
 
     predictions = torch.argmax(outputs, dim=1)
 
-
-# ============================================================
-# DISPLAY RESULTS
-# ============================================================
-
 plt.figure(figsize=(15, 8))
 
 for i in range(len(images)):
 
     image = images[i].cpu().squeeze(0)
 
-    # Undo Normalize for displaying
     image = image * 0.5 + 0.5
 
     true_label = test_dataset.classes[labels[i].item()]
