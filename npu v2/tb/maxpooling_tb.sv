@@ -4,30 +4,29 @@ module tb_maxpooling;
 
     parameter DATA_WIDTH = 24;
 
-    reg clk;
-    reg rst;
+    logic clk;
+    logic rst;
 
-    reg config_en;
-    reg [1:0] pool_size;
-    reg [1:0] stride;
-    reg [15:0] img_width;
+    logic config_en;
+    logic [1:0] pool_size;
+    logic [1:0] stride;
+    logic [15:0] img_width;
 
-    reg signed [DATA_WIDTH-1:0] data_in;
-    reg valid_in;
-
-    wire signed [DATA_WIDTH-1:0] data_out;
-    wire valid_out;
+    logic signed [DATA_WIDTH-1:0] data_in;
+    logic valid_in;
+    logic signed [DATA_WIDTH-1:0] data_out;
+    logic valid_out;
 
 
     maxpooling #(
         .DATA_WIDTH(DATA_WIDTH),
-        .MAX_POOL(3),
-        .MAX_STRIDE(3)
+        .MAX_POOL(3)
     ) dut (
         .clk(clk),
         .rst(rst),
 
         .config_en(config_en),
+
         .pool_size(pool_size),
         .stride(stride),
         .img_width(img_width),
@@ -39,27 +38,22 @@ module tb_maxpooling;
         .valid_out(valid_out)
     );
 
+
     always #5 clk = ~clk;
 
     task send_pixel;
-        input signed [DATA_WIDTH-1:0] pixel;
+        input [DATA_WIDTH-1:0] pixel;
         begin
             @(negedge clk);
-
             data_in  = pixel;
             valid_in = 1'b1;
-
-            @(negedge clk);
-
-            data_in  = 0;
-            valid_in = 1'b0;
         end
     endtask
+
 
     task send_invalid;
         begin
             @(negedge clk);
-
             data_in  = 0;
             valid_in = 1'b0;
         end
@@ -67,11 +61,9 @@ module tb_maxpooling;
 
 
     initial begin
-
         clk = 0;
-
-        rst       = 1'b1;
-        config_en = 1'b0;
+        rst = 1;
+        config_en = 0;
 
         pool_size = 0;
         stride    = 0;
@@ -79,64 +71,69 @@ module tb_maxpooling;
 
         data_in  = 0;
         valid_in = 0;
-
         #20;
-
-        rst = 1'b0;
+        rst = 0;
 
         @(negedge clk);
-
-        config_en = 1'b1;
-
+        config_en = 1;
         pool_size = 2;
         stride    = 2;
-        img_width = 2;
-
-
+        img_width = 5;
         @(negedge clk);
+        config_en = 0;
 
-        config_en = 1'b0;
+        send_pixel(1);
+        send_pixel(2);
+        send_pixel(3);
+        send_pixel(4);
+        send_pixel(5);
 
-        send_pixel(24'd1);
+        send_pixel(6);
+        send_pixel(7);
 
-        send_pixel(24'd2);
-        send_invalid;
+        send_pixel(8);
+        send_pixel(9);
+        send_pixel(10);
 
-        send_pixel(24'd4);
+        send_pixel(11);
+        send_pixel(12);
+        send_pixel(13);
+        send_pixel(14);
+        send_pixel(15);
 
-        send_pixel(24'd5);
+        send_pixel(16);
+        send_pixel(17);
 
-        #30;
+        send_pixel(18);
+        send_pixel(19);
+        send_pixel(20);
 
+        send_pixel(21);
+        send_pixel(22);
+        send_pixel(23);
+        send_pixel(24);
+        send_pixel(25);
 
+        #10;
+        send_invalid(0);
+        #50;
         $finish;
-
     end
 
+
     always @(posedge clk) begin
-
-        if (valid_in) begin
-            $display(
-                "TIME=%0t | INPUT  data=%0d valid=%b",
-                $time,
-                data_in,
-                valid_in
-            );
-        end
-
         if (valid_out) begin
-            $display(
-                "TIME=%0t | OUTPUT data=%0d valid=%b",
+            $display("TIME=%0t | MAXPOOL OUTPUT = %0d | VALID = %b",
                 $time,
                 data_out,
                 valid_out
             );
         end
-
     end
-
+  
     initial begin 
         $dumpfile("dump.vcd"); $dumpvars;
     end
+    
 
 endmodule
