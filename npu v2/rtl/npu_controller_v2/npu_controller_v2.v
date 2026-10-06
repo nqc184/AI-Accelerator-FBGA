@@ -6,17 +6,20 @@ module npu_controller (
     input [2:0] kernel_size, stride,
     input [1:0] activation,
     input [15:0] number_kernel,
+    input en_maxpooling,
 
     output [15:0] img_width_config, img_height_config,
     output [2:0] kernel_size_config, stride_config,
     output [1:0] activation_config,
     output [15:0] number_kernel_monitor,
+    output en_maxpooling_config,
 
     output start_config_pixel_buffer_loader, start_config_weight_buffer_loader,
     output start_config_activation, start_config_ofm,
+    output start_config_maxpooling,
 
     input done_config_pixel_buffer_loader, done_config_weight_buffer_loader,
-    input done_config_activation, done_config_ofm,
+    input done_config_activation, done_config_ofm, done_config_maxpooling,
 
     output rd_en_pixel,
     output [13:0] rd_addr_pixel,
@@ -56,10 +59,10 @@ module npu_controller (
     assign wgt_cnt_monitor = wgt_cnt;
     assign bias_cnt_monitor = bias_cnt;
 
-    reg pixel_cfg_sent, wgt_cfg_sent, act_cfg_sent, ofm_cfg_sent;
+    reg pixel_cfg_sent, wgt_cfg_sent, act_cfg_sent, ofm_cfg_sent, maxpooling_cfg_sent;
     reg start_calc_sent;
     reg done_config_pixel_buffer_loader_flag, done_config_weight_buffer_loader_flag;
-    reg done_config_activation_flag, done_config_ofm_flag;
+    reg done_config_activation_flag, done_config_ofm_flag, done_config_maxpooling_flag;
 
     reg valid_pixel_reg, valid_wgt_reg, valid_bias_reg;
     reg [13:0] rd_addr_pixel_reg, rd_addr_wgt_reg, rd_addr_bias_reg;
@@ -68,6 +71,7 @@ module npu_controller (
     reg [2:0] kernel_size_reg, stride_reg;
     reg [1:0] activation_reg;
     reg [15:0] number_kernel_reg;
+    reg en_maxpooling_reg;
 
     reg start_calc_reg;
     reg clear_window_reg_r, clear_wgt_reg_r, clear_bias_reg_r;
@@ -99,7 +103,7 @@ module npu_controller (
             end
             CONFIG: begin
                 if (done_config_pixel_buffer_loader_flag && done_config_weight_buffer_loader_flag &&
-                    done_config_activation_flag && done_config_ofm_flag) begin
+                    done_config_activation_flag && done_config_ofm_flag && done_config_maxpooling_flag) begin
                     next_state = LOAD;
                 end
             end
@@ -134,12 +138,14 @@ module npu_controller (
             done_config_weight_buffer_loader_flag <= 1'b0;
             done_config_activation_flag <= 1'b0;
             done_config_ofm_flag <= 1'b0;
+            done_config_maxpooling_flag <= 1'b0;
 
             pixel_cfg_sent <= 1'b0;
             wgt_cfg_sent <= 1'b0;
             act_cfg_sent <= 1'b0;
             ofm_cfg_sent <= 1'b0;
             start_calc_sent <= 1'b0;
+            maxpooling_cfg_sent <= 1'b0;
 
             window_cnt <= 3'd0; wgt_cnt <= 3'd0; bias_cnt <= 3'd0;
 
@@ -149,6 +155,7 @@ module npu_controller (
             img_width_reg <= 16'd0; img_height_reg <= 16'd0;
             kernel_size_reg <= 3'd0; stride_reg <= 3'd0;
             activation_reg <= 2'd0;
+            en_maxpooling_reg <= 1'b0;
 
             number_kernel_reg <= 16'd0;
             start_calc_reg <= 1'b0; 
@@ -205,6 +212,7 @@ module npu_controller (
                 kernel_size_reg <= kernel_size; stride_reg <= stride;
                 activation_reg <= activation;
                 number_kernel_reg <= number_kernel;
+                en_maxpooling_reg <= en_maxpooling;
             end
         end
 
@@ -213,22 +221,26 @@ module npu_controller (
             if (!wgt_cfg_sent) wgt_cfg_sent <= 1'b1;
             if (!act_cfg_sent) act_cfg_sent <= 1'b1;
             if (!ofm_cfg_sent) ofm_cfg_sent <= 1'b1;
+            if (!maxpooling_cfg_sent) maxpooling_cfg_sent <= 1'b1;
 
             if (done_config_pixel_buffer_loader)  done_config_pixel_buffer_loader_flag  <= 1'b1;
             if (done_config_weight_buffer_loader) done_config_weight_buffer_loader_flag <= 1'b1;
             if (done_config_activation) done_config_activation_flag <= 1'b1;
             if (done_config_ofm) done_config_ofm_flag <= 1'b1;
+            if (done_config_maxpooling) done_config_maxpooling_flag <= 1'b1;
         end
         else begin
             pixel_cfg_sent <= 1'b0;
             wgt_cfg_sent <= 1'b0;
             act_cfg_sent <= 1'b0;
             ofm_cfg_sent <= 1'b0;
+            maxpooling_cfg_sent <= 1'b0;
 
             done_config_pixel_buffer_loader_flag <= 1'b0;
             done_config_weight_buffer_loader_flag <= 1'b0;
             done_config_activation_flag <= 1'b0;
             done_config_ofm_flag <= 1'b0;
+            done_config_maxpooling_flag <= 1'b0;
         end
 
         if (current_state == LOAD) begin
@@ -285,11 +297,13 @@ module npu_controller (
     assign kernel_size_config = kernel_size_reg;
     assign stride_config = stride_reg;
     assign activation_config = activation_reg;
+    assign en_maxpooling_config = en_maxpooling_reg;
 
     assign start_config_pixel_buffer_loader  = (current_state == CONFIG && !pixel_cfg_sent) ? 1'b1 : 1'b0;
     assign start_config_weight_buffer_loader = (current_state == CONFIG && !wgt_cfg_sent) ? 1'b1 : 1'b0;
     assign start_config_activation = (current_state == CONFIG && !act_cfg_sent) ? 1'b1 : 1'b0;
     assign start_config_ofm = (current_state == CONFIG && !ofm_cfg_sent) ? 1'b1 : 1'b0;
+    assign start_config_maxpooling = (current_state == CONFIG && !maxpooling_cfg_sent) ? 1'b1 : 1'b0;
 
     assign rd_addr_pixel = (current_state == LOAD) ? rd_addr_pixel_reg : 14'd0;
     assign rd_addr_wgt = (current_state == LOAD) ? rd_addr_wgt_reg : 14'd0;
