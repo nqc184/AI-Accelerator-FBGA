@@ -49,15 +49,21 @@ module top #(
     input [2:0] kernel_size, stride,
     input [1:0] activation,
     input [15:0] number_kernel,
+    input [1:0] pool_size, pool_stride,
+    input en_maxpooling,
     output [15:0] img_width_config_monitor, img_height_config_monitor,
     output [2:0] kernel_size_config_monitor, stride_config_monitor,
     output [1:0] activation_config_monitor,
     output [15:0] number_kernel_config_monitor,
+    output [1:0] pool_size_config_monitor, pool_stride_config_monitor,
+    output en_maxpooling_config_monitor,
 
     output start_config_pixel_buffer_loader_monitor, start_config_weight_buffer_loader_monitor,
     output start_config_activation_monitor, start_config_ofm_monitor,
+    output start_config_maxpooling_monitor,
 
     output done_config_pixel_buffer_loader_monitor, done_config_weight_buffer_loader_monitor, done_config_activation_monitor,
+    output done_config_maxpooling_monitor,
     input done_config_ofm,
 
     output rd_en_pixel_monitor, rd_en_wgt_monitor, rd_en_bias_monitor,
@@ -100,6 +106,9 @@ module top #(
 
     output signed [23:0] quantization_result0_monitor, quantization_result1_monitor, quantization_result2_monitor, quantization_result3_monitor, quantization_result4_monitor,
     output valid_quantization_result0_monitor, valid_quantization_result1_monitor, valid_quantization_result2_monitor, valid_quantization_result3_monitor, valid_quantization_result4_monitor
+
+    output [23:0] maxpooling_result0_monitor, maxpooling_result1_monitor, maxpooling_result2_monitor, maxpooling_result3_monitor, maxpooling_result4_monitor,
+    output valid_maxpooling_result0_monitor, valid_maxpooling_result1_monitor, valid_maxpooling_result2_monitor, valid_maxpooling_result3_monitor, valid_maxpooling_result4_monitor
 );
     //System Controller
     wire start_load, start_npu;
@@ -168,6 +177,8 @@ module top #(
     wire [2:0] kernel_size_config, stride_config;
     wire [1:0] activation_config;
     wire [15:0] number_kernel_config;
+    wire [1:0] pool_size_config, pool_stride_config;
+    wire en_maxpooling_config;
 
     assign img_width_config_monitor = img_width_config;
     assign img_height_config_monitor = img_height_config;
@@ -175,19 +186,25 @@ module top #(
     assign stride_config_monitor = stride_config;
     assign activation_config_monitor = activation_config;
     assign number_kernel_config_monitor = number_kernel_config;
+    assign pool_size_config_monitor = pool_size_config;
+    assign pool_stride_config_monitor = pool_stride_config;
+    assign en_maxpooling_config_monitor = en_maxpooling_config;
 
     wire start_config_pixel_buffer_loader, start_config_weight_buffer_loader;
-    wire start_config_activation, start_config_ofm;
+    wire start_config_activation, start_config_ofm, start_config_maxpooling;
 
     assign start_config_pixel_buffer_loader_monitor = start_config_pixel_buffer_loader;
     assign start_config_weight_buffer_loader_monitor = start_config_weight_buffer_loader;
     assign start_config_activation_monitor = start_config_activation;
     assign start_config_ofm_monitor = start_config_ofm;
+    assign start_config_maxpooling_monitor = start_config_maxpooling;
 
     wire done_config_pixel_buffer_loader, done_config_weight_buffer_loader, done_config_activation;
+    wire done_config_maxpooling;
     assign done_config_pixel_buffer_loader_monitor = done_config_pixel_buffer_loader;
     assign done_config_weight_buffer_loader_monitor = done_config_weight_buffer_loader;
     assign done_config_activation_monitor = done_config_activation;
+    assign done_config_maxpooling_monitor = done_config_maxpooling;
 
     wire rd_en_pixel, rd_en_wgt, rd_en_bias;
     wire signed [DATA_WIDTH-1:0] rd_data_pixel, rd_data_wgt;
@@ -233,17 +250,23 @@ module top #(
         .kernel_size(kernel_size), .stride(stride),
         .activation(activation),
         .number_kernel(number_kernel),
+        .pool_size(pool_size), .pool_stride(pool_stride),
+        .en_maxpooling(en_maxpooling),
 
         .img_width_config(img_width_config), .img_height_config(img_height_config),
         .kernel_size_config(kernel_size_config), .stride_config(stride_config),
         .activation_config(activation_config),
         .number_kernel_monitor(number_kernel_config),
+        .pool_size_config(pool_size_config), .pool_stride_config(pool_stride_config),
+        .en_maxpooling_config(en_maxpooling_config),
 
         .start_config_pixel_buffer_loader(start_config_pixel_buffer_loader), .start_config_weight_buffer_loader(start_config_weight_buffer_loader),
         .start_config_activation(start_config_activation), .start_config_ofm(start_config_ofm),
+        .start_config_maxpooling(start_config_maxpooling),
 
         .done_config_pixel_buffer_loader(done_config_pixel_buffer_loader), .done_config_weight_buffer_loader(done_config_weight_buffer_loader),
         .done_config_activation(done_config_activation), .done_config_ofm(done_config_ofm),
+        .done_config_maxpooling(done_config_maxpooling),
 
         .rd_en_pixel(rd_en_pixel), 
         .rd_addr_pixel(rd_addr_pixel), 
@@ -543,5 +566,44 @@ module top #(
         .data_in0(activation_result0), .data_in1(activation_result1), .data_in2(activation_result2), .data_in3(activation_result3), .data_in4(activation_result4),
         .data_out0(quantization_result0), .data_out1(quantization_result1), .data_out2(quantization_result2), .data_out3(quantization_result3), .data_out4(quantization_result4),
         .valid_out0(valid_quantization_result0), .valid_out1(valid_quantization_result1), .valid_out2(valid_quantization_result2), .valid_out3(valid_quantization_result3), .valid_out4(valid_quantization_result4)
+    );
+
+    //Maxpooling
+    wire signed [23:0] maxpooling_result0, maxpooling_result1, maxpooling_result2, maxpooling_result3, maxpooling_result4;
+    wire valid_maxpooling_result0, valid_maxpooling_result1, valid_maxpooling_result2, valid_maxpooling_result3, valid_maxpooling_result4;
+    assign maxpooling_result0_monitor = maxpooling_result0;
+    assign maxpooling_result1_monitor = maxpooling_result1;
+    assign maxpooling_result2_monitor = maxpooling_result2;
+    assign maxpooling_result3_monitor = maxpooling_result3;
+    assign maxpooling_result4_monitor = maxpooling_result4;
+    assign valid_maxpooling_result0_monitor = valid_maxpooling_result0;
+    assign valid_maxpooling_result1_monitor = valid_maxpooling_result1;
+    assign valid_maxpooling_result2_monitor = valid_maxpooling_result2;
+    assign valid_maxpooling_result3_monitor = valid_maxpooling_result3;
+    assign valid_maxpooling_result4_monitor = valid_maxpooling_result4;
+    maxpooling_unit#(
+        .DATA_WIDTH(24),
+        .MAX_POOL(3),
+        .MAX_WIDTH(1024)
+    )maxpooling_unit_inst(
+        .clk(clk), .rst(rst),
+
+        .enable(en_maxpooling_config),
+        .config_start(start_config_maxpooling),
+
+        .pool_size(pool_size_config),
+        .stride(pool_stride_config),
+        .img_width(img_width_config),
+
+        .data_in_0(quantization_result0), .data_in_1(quantization_result1), 
+        .data_in_2(quantization_result2), .data_in_3(quantization_result3), 
+        .data_in_4(quantization_result4),
+        .valid_in_0(valid_quantization_result0), .valid_in_1(valid_quantization_result1), 
+        .valid_in_2(valid_quantization_result2), .valid_in_3(valid_quantization_result3), 
+        .valid_in_4(valid_quantization_result4),
+        .data_out_0(maxpooling_result0), .data_out_1(maxpooling_result1), .data_out_2(maxpooling_result2), .data_out_3(maxpooling_result3), .data_out_4(maxpooling_result4),
+        .valid_out_0(valid_maxpooling_result0), .valid_out_1(valid_maxpooling_result1), .valid_out_2(valid_maxpooling_result2), .valid_out_3(valid_maxpooling_result3), .valid_out_4(valid_maxpooling_result4),
+
+        .config_done(done_config_maxpooling)
     );
 endmodule
