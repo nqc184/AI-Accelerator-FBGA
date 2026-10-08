@@ -38,6 +38,8 @@ module npu_controller (
 
     input valid_window_out, valid_wgt_out,
     input last_window_out,
+ 
+    output [2:0] lane_count,
 
     output [2:0] window_cnt_monitor, wgt_cnt_monitor, bias_cnt_monitor
 );
@@ -319,6 +321,7 @@ module npu_controller (
     assign valid_pixel = valid_pixel_reg;
     assign valid_wgt = valid_wgt_reg;
     assign valid_bias = valid_bias_reg;
+    assign lane_count = wgt_batch_target;
 
     assign number_kernel_monitor = number_kernel_reg;
     assign start_calc = start_calc_reg;

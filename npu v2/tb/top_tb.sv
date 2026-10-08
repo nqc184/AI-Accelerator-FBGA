@@ -49,6 +49,8 @@ module top_tb();
     logic [2:0] stride;
     logic [1:0] activation;
     logic [15:0] number_kernel;
+    logic [1:0] pool_size, pool_stride;
+    logic en_maxpooling;
 
     logic [15:0] img_width_config_monitor;
     logic [15:0] img_height_config_monitor;
@@ -56,16 +58,21 @@ module top_tb();
     logic [2:0] stride_config_monitor;
     logic [1:0] activation_config_monitor;
     logic [15:0] number_kernel_config_monitor;
+    logic [1:0] pool_size_config_monitor, pool_stride_config_monitor;
+    logic en_maxpooling_config_monitor;
+    logic [2:0] lane_count_monitor;
 
     logic start_config_pixel_buffer_loader_monitor;
     logic start_config_weight_buffer_loader_monitor;
     logic start_config_activation_monitor;
     logic start_config_ofm_monitor;
+    logic start_config_maxpooling_monitor;
 
     logic done_config_pixel_buffer_loader_monitor;
     logic done_config_weight_buffer_loader_monitor;
     logic done_config_activation_monitor;
     logic done_config_ofm;
+    logic done_config_maxpooling_monitor;
 
     logic rd_en_pixel_monitor, rd_en_wgt_monitor, rd_en_bias_monitor;
     logic valid_pixel_monitor, valid_wgt_monitor, valid_bias_monitor;
@@ -114,6 +121,9 @@ module top_tb();
 
     logic signed [23:0] quantization_result0_monitor, quantization_result1_monitor, quantization_result2_monitor, quantization_result3_monitor, quantization_result4_monitor;
     logic valid_quantization_result0_monitor, valid_quantization_result1_monitor, valid_quantization_result2_monitor, valid_quantization_result3_monitor, valid_quantization_result4_monitor;
+    
+    logic signed [23:0] maxpooling_result0_monitor, maxpooling_result1_monitor, maxpooling_result2_monitor, maxpooling_result3_monitor, maxpooling_result4_monitor;
+    logic valid_maxpooling_result0_monitor, valid_maxpooling_result1_monitor, valid_maxpooling_result2_monitor, valid_maxpooling_result3_monitor, valid_maxpooling_result4_monitor;
     top #(
         .DATA_WIDTH(`DATA_WIDTH),
         .AXI_BURST(`AXI_BURST),
@@ -170,6 +180,10 @@ module top_tb();
         .stride(stride),
         .activation(activation),
         .number_kernel(number_kernel),
+        .pool_size(pool_size),
+        .pool_stride(pool_stride),
+        .en_maxpooling(en_maxpooling),
+        .lane_count_monitor(lane_count_monitor),
 
         .img_width_config_monitor(img_width_config_monitor),
         .img_height_config_monitor(img_height_config_monitor),
@@ -181,11 +195,13 @@ module top_tb();
         .start_config_pixel_buffer_loader_monitor(start_config_pixel_buffer_loader_monitor),
         .start_config_weight_buffer_loader_monitor(start_config_weight_buffer_loader_monitor),
         .start_config_activation_monitor(start_config_activation_monitor),
+        .start_config_maxpooling_monitor(start_config_maxpooling_monitor),
         .start_config_ofm_monitor(start_config_ofm_monitor),
 
         .done_config_pixel_buffer_loader_monitor(done_config_pixel_buffer_loader_monitor),
         .done_config_weight_buffer_loader_monitor(done_config_weight_buffer_loader_monitor),
         .done_config_activation_monitor(done_config_activation_monitor),
+        .done_config_maxpooling_monitor(done_config_maxpooling_monitor),
         .done_config_ofm(done_config_ofm),
 
         .rd_en_pixel_monitor(rd_en_pixel_monitor),
@@ -240,7 +256,10 @@ module top_tb();
         .valid_activation_result0_monitor(valid_activation_result0_monitor), .valid_activation_result1_monitor(valid_activation_result1_monitor), .valid_activation_result2_monitor(valid_activation_result2_monitor), .valid_activation_result3_monitor(valid_activation_result3_monitor), .valid_activation_result4_monitor(valid_activation_result4_monitor),
 
         .quantization_result0_monitor(quantization_result0_monitor), .quantization_result1_monitor(quantization_result1_monitor), .quantization_result2_monitor(quantization_result2_monitor), .quantization_result3_monitor(quantization_result3_monitor), .quantization_result4_monitor(quantization_result4_monitor),
-        .valid_quantization_result0_monitor(valid_quantization_result0_monitor), .valid_quantization_result1_monitor(valid_quantization_result1_monitor), .valid_quantization_result2_monitor(valid_quantization_result2_monitor), .valid_quantization_result3_monitor(valid_quantization_result3_monitor), .valid_quantization_result4_monitor(valid_quantization_result4_monitor)
+        .valid_quantization_result0_monitor(valid_quantization_result0_monitor), .valid_quantization_result1_monitor(valid_quantization_result1_monitor), .valid_quantization_result2_monitor(valid_quantization_result2_monitor), .valid_quantization_result3_monitor(valid_quantization_result3_monitor), .valid_quantization_result4_monitor(valid_quantization_result4_monitor),
+
+        .maxpooling_result0_monitor(maxpooling_result0_monitor), .maxpooling_result1_monitor(maxpooling_result1_monitor), .maxpooling_result2_monitor(maxpooling_result2_monitor), .maxpooling_result3_monitor(maxpooling_result3_monitor), .maxpooling_result4_monitor(maxpooling_result4_monitor),
+        .valid_maxpooling_result0_monitor(valid_maxpooling_result0_monitor), .valid_maxpooling_result1_monitor(valid_maxpooling_result1_monitor), .valid_maxpooling_result2_monitor(valid_maxpooling_result2_monitor), .valid_maxpooling_result3_monitor(valid_maxpooling_result3_monitor), .valid_maxpooling_result4_monitor(valid_maxpooling_result4_monitor)
     );
 
     axi_stream_source_tb #(
@@ -296,6 +315,8 @@ module top_tb();
         kernel_size = 3'd3; stride = 3'd1;
         activation = 2'd1;
         number_kernel = 16'd6;
+        pool_size = 2'd2; pool_stride = 2'd1;
+        en_maxpooling = 1'b1;
         done_config_ofm = 0;
         #13; rst = 1;
         #10; rst = 0;

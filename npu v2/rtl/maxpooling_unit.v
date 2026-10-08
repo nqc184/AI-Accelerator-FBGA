@@ -14,10 +14,10 @@ module maxpooling_unit#(
 
     input signed [DATA_WIDTH-1:0] data_in_0, data_in_1, data_in_2, data_in_3, data_in_4,
     input valid_in_0, valid_in_1, valid_in_2, valid_in_3, valid_in_4,
-    output reg signed [DATA_WIDTH-1:0] data_out_0, data_out_1, data_out_2, data_out_3, data_out_4,
-    output reg valid_out_0, valid_out_1, valid_out_2, valid_out_3, valid_out_4,
+    output signed [DATA_WIDTH-1:0] data_out_0, data_out_1, data_out_2, data_out_3, data_out_4,
+    output valid_out_0, valid_out_1, valid_out_2, valid_out_3, valid_out_4,
 
-    output reg config_done
+    output config_done
 );
     wire config_done_0, config_done_1, config_done_2, config_done_3, config_done_4;
     assign config_done = config_done_0 & config_done_1 & config_done_2 & config_done_3 & config_done_4;

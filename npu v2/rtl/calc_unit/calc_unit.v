@@ -10,6 +10,7 @@ module calc_unit #(
     input wire clk,
     input wire reset,
     input wire start,
+    input wire [2:0] lane_count, 
     
 
     input wire signed [599:0] IFM0,
@@ -145,6 +146,7 @@ module calc_unit #(
         .START_CYCLE_COL_5(START_CYCLE_COL_5)
     )output_mux_inst(
         .cycle(cycle_out_reg),
+        .lane_count(lane_count),
 
         .c1(c1), .c2(c2), .c3(c3), .c4(c4), .c5(c5),
         .c6(c6), .c7(c7), .c8(c8), .c9(c9), .c10(c10),

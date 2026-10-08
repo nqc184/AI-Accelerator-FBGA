@@ -57,6 +57,7 @@ module top #(
     output [15:0] number_kernel_config_monitor,
     output [1:0] pool_size_config_monitor, pool_stride_config_monitor,
     output en_maxpooling_config_monitor,
+    output [2:0] lane_count_monitor,
 
     output start_config_pixel_buffer_loader_monitor, start_config_weight_buffer_loader_monitor,
     output start_config_activation_monitor, start_config_ofm_monitor,
@@ -105,9 +106,9 @@ module top #(
     output valid_activation_result0_monitor, valid_activation_result1_monitor, valid_activation_result2_monitor, valid_activation_result3_monitor, valid_activation_result4_monitor,
 
     output signed [23:0] quantization_result0_monitor, quantization_result1_monitor, quantization_result2_monitor, quantization_result3_monitor, quantization_result4_monitor,
-    output valid_quantization_result0_monitor, valid_quantization_result1_monitor, valid_quantization_result2_monitor, valid_quantization_result3_monitor, valid_quantization_result4_monitor
+    output valid_quantization_result0_monitor, valid_quantization_result1_monitor, valid_quantization_result2_monitor, valid_quantization_result3_monitor, valid_quantization_result4_monitor,
 
-    output [23:0] maxpooling_result0_monitor, maxpooling_result1_monitor, maxpooling_result2_monitor, maxpooling_result3_monitor, maxpooling_result4_monitor,
+    output signed [23:0] maxpooling_result0_monitor, maxpooling_result1_monitor, maxpooling_result2_monitor, maxpooling_result3_monitor, maxpooling_result4_monitor,
     output valid_maxpooling_result0_monitor, valid_maxpooling_result1_monitor, valid_maxpooling_result2_monitor, valid_maxpooling_result3_monitor, valid_maxpooling_result4_monitor
 );
     //System Controller
@@ -179,6 +180,7 @@ module top #(
     wire [15:0] number_kernel_config;
     wire [1:0] pool_size_config, pool_stride_config;
     wire en_maxpooling_config;
+    wire [2:0] lane_count;
 
     assign img_width_config_monitor = img_width_config;
     assign img_height_config_monitor = img_height_config;
@@ -189,6 +191,7 @@ module top #(
     assign pool_size_config_monitor = pool_size_config;
     assign pool_stride_config_monitor = pool_stride_config;
     assign en_maxpooling_config_monitor = en_maxpooling_config;
+    assign lane_count_monitor = lane_count;
 
     wire start_config_pixel_buffer_loader, start_config_weight_buffer_loader;
     wire start_config_activation, start_config_ofm, start_config_maxpooling;
@@ -283,6 +286,7 @@ module top #(
 
         .valid_window_out(valid_window_out), .valid_wgt_out(valid_wgt_out),
         .last_window_out(last_window_out),
+        .lane_count(lane_count),
 
         .window_cnt_monitor(window_cnt_monitor), .wgt_cnt_monitor(wgt_cnt_monitor), .bias_cnt_monitor(bias_cnt_monitor)
     );
@@ -447,6 +451,7 @@ module top #(
     calc_unit #(.DW(24)
     )calc_unit_inst(
         .clk(clk), .reset(rst), .start(start_calc),
+        .lane_count(lane_count),
 
         .IFM0(window_0), .IFM1(window_1), .IFM2(window_2), .IFM3(window_3), .IFM4(window_4),
         .WGT0(wgt_reg[0]), .WGT1(wgt_reg[1]), .WGT2(wgt_reg[2]), .WGT3(wgt_reg[3]), .WGT4(wgt_reg[4]),
