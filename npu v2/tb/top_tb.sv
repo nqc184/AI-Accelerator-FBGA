@@ -191,6 +191,8 @@ module top_tb();
         .stride_config_monitor(stride_config_monitor),
         .activation_config_monitor(activation_config_monitor),
         .number_kernel_config_monitor(number_kernel_config_monitor),
+        .pool_size_config_monitor(pool_size_config_monitor), .pool_stride_config_monitor(pool_stride_config_monitor),
+        .en_maxpooling_config_monitor(en_maxpooling_config_monitor),
 
         .start_config_pixel_buffer_loader_monitor(start_config_pixel_buffer_loader_monitor),
         .start_config_weight_buffer_loader_monitor(start_config_weight_buffer_loader_monitor),

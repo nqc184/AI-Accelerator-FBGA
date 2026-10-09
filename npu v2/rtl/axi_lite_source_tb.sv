@@ -34,7 +34,7 @@ module axi_stream_source_tb #(
         for (int i = 0; i < MEM_DEPTH; i++) mem[i] = '0;
         fd = $fopen(FILE_NAME, "r");
         n  = 0;
-        while (n < MEM_DEPTH && $fscanf(fd, "%d", val) == 1) begin
+        while (n < MEM_DEPTH && $fscanf(fd, "%h", val) == 1) begin
             mem[n] = val;
             n++;
         end
