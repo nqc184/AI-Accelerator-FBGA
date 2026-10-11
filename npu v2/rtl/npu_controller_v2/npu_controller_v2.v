@@ -41,7 +41,10 @@ module npu_controller (
  
     output [2:0] lane_count,
 
-    output [2:0] window_cnt_monitor, wgt_cnt_monitor, bias_cnt_monitor
+    output [2:0] window_cnt_monitor, wgt_cnt_monitor, bias_cnt_monitor,
+    output [15:0] ofm_base_addr,
+    output [2:0]  win_in_batch,
+    output batch_start
 );
     localparam IDLE = 3'd0;
     localparam CONFIG = 3'd1;
@@ -81,7 +84,12 @@ module npu_controller (
     reg start_calc_reg;
     reg clear_window_reg_r, clear_wgt_reg_r, clear_bias_reg_r;
     reg last_window_out_reg;
-    reg [2:0] wgt_batch_target;   
+    reg [2:0] wgt_batch_target; 
+    reg [15:0] total_windows;      
+    reg [15:0] kernel_batch;       
+    reg [15:0] window_base;        
+    reg [2:0]  win_in_batch_r;     
+    reg batch_start_r;    
 
     reg [15:0] pix_col, pix_row;      
     reg [2:0] pix_win_req;           
@@ -173,18 +181,40 @@ module npu_controller (
             pix_col <= 16'd0; pix_row <= 16'd0;
             pix_win_req <= 3'd0; pix_req_done <= 1'b0;
             wgt_req_cnt <= 8'd0; wgt_words_target <= 8'd0;
+
+            total_windows <= 16'd0;    
+            kernel_batch <= 16'd0;    
+            window_base <= 16'd0;   
+            win_in_batch_r <= 3'd0;     
+            batch_start_r <= 1'b0;    
         end
         else begin
             current_state <= next_state;
             clear_window_reg_r <= (current_state == CONFIG  && next_state == LOAD) || (current_state == COMPUTE && next_state == LOAD);
             clear_wgt_reg_r <= (current_state == COMPUTE) && done_calc && last_window_out_reg;
             clear_bias_reg_r <= (current_state == COMPUTE) && done_calc && last_window_out_reg;
+            batch_start_r <= (current_state == LOAD && next_state == COMPUTE); 
+            if (current_state == LOAD && next_state == COMPUTE) begin            
+                win_in_batch_r <= pix_win_req;                                    
+            end                                                                    
+            if (current_state == COMPUTE && done_calc) begin                      
+                if (last_window_out_reg) begin                                    
+                    window_base <= 16'd0;                                        
+                    kernel_batch <= kernel_batch + 16'd1;                         
+                end                                                               
+                else begin                                                        
+                    window_base <= window_base + win_in_batch_r;                  
+                end                                                                
+            end                                                                   
             if (current_state == CONFIG && next_state == LOAD) begin
                 wgt_batch_target  <= (number_kernel_reg > WEIGHT_COUNT) ? WEIGHT_COUNT[2:0] : number_kernel_reg[2:0];
                 wgt_words_target  <= ((number_kernel_reg > WEIGHT_COUNT) ? WEIGHT_COUNT[2:0] : number_kernel_reg[2:0])
                                       * (kernel_size_reg * kernel_size_reg);
                 number_kernel_reg <= (number_kernel_reg > WEIGHT_COUNT) ? number_kernel_reg - WEIGHT_COUNT : 16'd0;
-
+                total_windows <= (((img_width_reg - kernel_size_reg)/stride_reg)+16'd1) *      
+                                (((img_height_reg - kernel_size_reg)/stride_reg)+16'd1);      
+                kernel_batch  <= 16'd0;                                                          
+                window_base   <= 16'd0; 
                 pix_col <= 16'd0; pix_row <= 16'd0;
                 pix_win_req <= 3'd0; pix_req_done <= 1'b0;
                 window_cnt <= 3'd0; wgt_cnt <= 3'd0; wgt_req_cnt <= 8'd0; bias_cnt <= 3'd0;
@@ -328,4 +358,8 @@ module npu_controller (
     assign clear_window_reg = clear_window_reg_r;
     assign clear_wgt_reg = clear_wgt_reg_r;
     assign clear_bias_reg = clear_bias_reg_r;
+
+    assign ofm_base_addr = kernel_batch * total_windows + window_base;   
+    assign win_in_batch  = win_in_batch_r;                               
+    assign batch_start   = batch_start_r;                                 
 endmodule
