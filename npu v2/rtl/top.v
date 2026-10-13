@@ -113,7 +113,7 @@ module top #(
 
     output [15:0] ofm_base_addr_monitor,
     output [2:0] win_in_batch_monitor,
-    output batch_start_monitor,
+    output batch_start_monitor
 );
     //System Controller
     wire start_load, start_npu;

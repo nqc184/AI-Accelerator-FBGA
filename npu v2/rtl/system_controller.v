@@ -11,12 +11,15 @@ module system_controller(
     input wire bias_done,
 
     output reg start_load,
-    output reg start_npu
+    output reg start_npu,
+    input wire done_npu,
+    output reg ofm_grant
 );
 
     localparam IDLE    = 2'd0;
     localparam LOAD    = 2'd1;
     localparam COMPUTE = 2'd2;
+    localparam WRITE_OFM = 2'd3;
 
     reg [1:0] state;
 
@@ -31,6 +34,7 @@ module system_controller(
     assign ifm_done_flag = ifm_done_reg  | ifm_done;
     assign wgt_done_flag = wgt_done_reg  | wgt_done;
     assign bias_done_flag = bias_done_reg | bias_done; 
+
 
     always @(posedge clk) begin
 
@@ -75,17 +79,25 @@ module system_controller(
                 end
 
                 COMPUTE: begin
-                    ifm_done_reg    <= 0;
-                    wgt_done_reg    <= 0;
-                    bias_done_reg   <= 0;
-                    state <= IDLE;
+                    if (done_npu) begin
+                        state <= WRITE_OFM;
+                    end
+                end
+
+                WRITE_OFM: begin                       
+                    ofm_grant <= 1;                      
+                    ifm_done_reg  <= 0;
+                    wgt_done_reg  <= 0;
+                    bias_done_reg <= 0;
+                    state <= IDLE;                     
                 end
 
                 default: begin
-
                     state <= IDLE;
                 end
             endcase
         end
     end
+
+    
 endmodule

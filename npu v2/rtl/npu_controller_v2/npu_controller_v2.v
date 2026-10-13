@@ -44,7 +44,13 @@ module npu_controller (
     output [2:0] window_cnt_monitor, wgt_cnt_monitor, bias_cnt_monitor,
     output [15:0] ofm_base_addr,
     output [2:0]  win_in_batch,
-    output batch_start
+    output batch_start,
+
+    output npu_done,
+
+    input  ofm_grant,
+    output [15:0] ofm_rd_addr,
+    output ofm_rd_en
 );
     localparam IDLE = 3'd0;
     localparam CONFIG = 3'd1;
@@ -107,6 +113,10 @@ module npu_controller (
     assign rd_en_wgt = (current_state == LOAD) && (wgt_req_cnt < wgt_words_target);
     assign rd_en_bias = (current_state == LOAD) && (bias_cnt < wgt_batch_target);
 
+    reg npu_done_reg;
+    reg ofm_granted;
+    reg [15:0] ofm_rd_addr_reg;
+    reg ofm_rd_en_reg;
     //Combinational logic (next state)
     always @(*) begin
         next_state = current_state;
@@ -138,7 +148,7 @@ module npu_controller (
                 end
             end
             DONE: begin
-                
+                next_state = IDLE;
             end
         endcase
     end
@@ -186,7 +196,12 @@ module npu_controller (
             kernel_batch <= 16'd0;    
             window_base <= 16'd0;   
             win_in_batch_r <= 3'd0;     
-            batch_start_r <= 1'b0;    
+            batch_start_r <= 1'b0;   
+
+            done_npu_reg <= 1'b0;
+            ofm_granted <= 1'b0;
+            ofm_rd_addr_reg <= 16'd0;
+            ofm_rd_en_reg <= 1'b0;
         end
         else begin
             current_state <= next_state;
@@ -326,6 +341,27 @@ module npu_controller (
         else begin
             start_calc_sent <= 1'b0;  
         end
+
+        if(current_state==DONE) done_npu_reg <= 1'b1;
+        else done_npu_reg <= 1'b0;
+
+        if (current_state != DONE) begin
+            ofm_granted     <= 1'b0;
+            ofm_rd_addr_reg <= 16'd0;
+            ofm_rd_en_reg   <= 1'b0;
+        end
+        else begin
+            if (ofm_grant) ofm_granted <= 1'b1;
+            if (ofm_granted || ofm_grant) begin
+                if (ofm_rd_addr_reg < (kernel_batch * total_windows)) begin
+                    ofm_rd_en_reg   <= 1'b1;
+                    ofm_rd_addr_reg <= ofm_rd_addr_reg + 16'd1;
+                end
+                else begin
+                    ofm_rd_en_reg <= 1'b0;
+                end
+            end
+        end
     end
 
     //Output logic
@@ -361,5 +397,9 @@ module npu_controller (
 
     assign ofm_base_addr = kernel_batch * total_windows + window_base;   
     assign win_in_batch  = win_in_batch_r;                               
-    assign batch_start   = batch_start_r;                                 
+    assign batch_start   = batch_start_r; 
+
+    assign done_npu = done_npu_reg;  
+    assign ofm_rd_addr = ofm_rd_addr_reg;
+    assign ofm_rd_en = ofm_rd_en_reg;                              
 endmodule
