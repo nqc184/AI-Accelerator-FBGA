@@ -109,7 +109,11 @@ module top #(
     output valid_quantization_result0_monitor, valid_quantization_result1_monitor, valid_quantization_result2_monitor, valid_quantization_result3_monitor, valid_quantization_result4_monitor,
 
     output signed [23:0] maxpooling_result0_monitor, maxpooling_result1_monitor, maxpooling_result2_monitor, maxpooling_result3_monitor, maxpooling_result4_monitor,
-    output valid_maxpooling_result0_monitor, valid_maxpooling_result1_monitor, valid_maxpooling_result2_monitor, valid_maxpooling_result3_monitor, valid_maxpooling_result4_monitor
+    output valid_maxpooling_result0_monitor, valid_maxpooling_result1_monitor, valid_maxpooling_result2_monitor, valid_maxpooling_result3_monitor, valid_maxpooling_result4_monitor,
+
+    output [15:0] ofm_base_addr_monitor,
+    output [2:0] win_in_batch_monitor,
+    output batch_start_monitor,
 );
     //System Controller
     wire start_load, start_npu;
@@ -245,6 +249,13 @@ module top #(
     assign valid_wgt_out_monitor = valid_wgt_out;
     assign last_window_out_monitor = last_window_out;
 
+    wire [15:0] ofm_base_addr;
+    wire [2:0] win_in_batch;
+    wire batch_start;
+    assign ofm_base_addr_monitor = ofm_base_addr;
+    assign win_in_batch_monitor = win_in_batch;
+    assign batch_start_monitor = batch_start;
+
     npu_controller npu_controller_inst(
         .clk(clk), .rst(rst), .start_npu(start_npu),
         .current_state_monitor(current_state_monitor),
@@ -288,7 +299,10 @@ module top #(
         .last_window_out(last_window_out),
         .lane_count(lane_count),
 
-        .window_cnt_monitor(window_cnt_monitor), .wgt_cnt_monitor(wgt_cnt_monitor), .bias_cnt_monitor(bias_cnt_monitor)
+        .window_cnt_monitor(window_cnt_monitor), .wgt_cnt_monitor(wgt_cnt_monitor), .bias_cnt_monitor(bias_cnt_monitor),
+        .ofm_base_addr(ofm_base_addr),
+        .win_in_batch(win_in_batch),
+        .batch_start(batch_start)
     );
 
     //On chip Memory
@@ -610,5 +624,22 @@ module top #(
         .valid_out_0(valid_maxpooling_result0), .valid_out_1(valid_maxpooling_result1), .valid_out_2(valid_maxpooling_result2), .valid_out_3(valid_maxpooling_result3), .valid_out_4(valid_maxpooling_result4),
 
         .config_done(done_config_maxpooling)
+    );
+
+    //OFM
+    //OFM
+    ofm_unit #(.DW(24), .AW(16), .DEPTH(65536)) ofm_unit_inst (
+        .clk(clk), .rst(rst), .batch_start(batch_start),
+        .lane_count(lane_count), .win_in_batch(win_in_batch),
+        .base_addr(ofm_base_addr),
+
+        .d0(maxpooling_result0), .d1(maxpooling_result1), .d2(maxpooling_result2),
+        .d3(maxpooling_result3), .d4(maxpooling_result4),
+        .v0(valid_maxpooling_result0), .v1(valid_maxpooling_result1), .v2(valid_maxpooling_result2),
+        .v3(valid_maxpooling_result3), .v4(valid_maxpooling_result4),
+
+        .rd_en(),
+        .rd_addr0(), .rd_addr1(), .rd_addr2(), .rd_addr3(), .rd_addr4(),
+        .rd_data0(), .rd_data1(), .rd_data2(), .rd_data3(), .rd_data4()
     );
 endmodule
