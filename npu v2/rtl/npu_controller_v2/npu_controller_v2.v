@@ -17,11 +17,10 @@ module npu_controller (
     output en_maxpooling_config,
 
     output start_config_pixel_buffer_loader, start_config_weight_buffer_loader,
-    output start_config_activation, start_config_ofm,
-    output start_config_maxpooling,
+    output start_config_activation, start_config_maxpooling, start_config_ofm,
 
     input done_config_pixel_buffer_loader, done_config_weight_buffer_loader,
-    input done_config_activation, done_config_ofm, done_config_maxpooling,
+    input done_config_activation, done_config_maxpooling, done_config_ofm,
 
     output rd_en_pixel,
     output [13:0] rd_addr_pixel,
@@ -42,15 +41,8 @@ module npu_controller (
     output [2:0] lane_count,
 
     output [2:0] window_cnt_monitor, wgt_cnt_monitor, bias_cnt_monitor,
-    output [15:0] ofm_base_addr,
-    output [2:0]  win_in_batch,
-    output batch_start,
 
-    output npu_done,
-
-    input  ofm_grant,
-    output [15:0] ofm_rd_addr,
-    output ofm_rd_en
+    output npu_done
 );
     localparam IDLE = 3'd0;
     localparam CONFIG = 3'd1;
@@ -75,7 +67,8 @@ module npu_controller (
     reg pixel_cfg_sent, wgt_cfg_sent, act_cfg_sent, ofm_cfg_sent, maxpooling_cfg_sent;
     reg start_calc_sent;
     reg done_config_pixel_buffer_loader_flag, done_config_weight_buffer_loader_flag;
-    reg done_config_activation_flag, done_config_ofm_flag, done_config_maxpooling_flag;
+    reg done_config_activation_flag, done_config_maxpooling_flag;
+    reg done_config_ofm_flag;
 
     reg valid_pixel_reg, valid_wgt_reg, valid_bias_reg;
     reg [13:0] rd_addr_pixel_reg, rd_addr_wgt_reg, rd_addr_bias_reg;
@@ -90,12 +83,7 @@ module npu_controller (
     reg start_calc_reg;
     reg clear_window_reg_r, clear_wgt_reg_r, clear_bias_reg_r;
     reg last_window_out_reg;
-    reg [2:0] wgt_batch_target; 
-    reg [15:0] total_windows;      
-    reg [15:0] kernel_batch;       
-    reg [15:0] window_base;        
-    reg [2:0]  win_in_batch_r;     
-    reg batch_start_r;    
+    reg [2:0] wgt_batch_target;   
 
     reg [15:0] pix_col, pix_row;      
     reg [2:0] pix_win_req;           
@@ -114,9 +102,6 @@ module npu_controller (
     assign rd_en_bias = (current_state == LOAD) && (bias_cnt < wgt_batch_target);
 
     reg npu_done_reg;
-    reg ofm_granted;
-    reg [15:0] ofm_rd_addr_reg;
-    reg ofm_rd_en_reg;
     //Combinational logic (next state)
     always @(*) begin
         next_state = current_state;
@@ -125,8 +110,9 @@ module npu_controller (
                 next_state = start_npu ? CONFIG : IDLE;
             end
             CONFIG: begin
-                if (done_config_pixel_buffer_loader_flag && done_config_weight_buffer_loader_flag &&
-                    done_config_activation_flag && done_config_ofm_flag && done_config_maxpooling_flag) begin
+                 if (done_config_pixel_buffer_loader_flag && done_config_weight_buffer_loader_flag &&
+                    done_config_activation_flag && done_config_maxpooling_flag &&
+                    done_config_ofm_flag) begin                                  
                     next_state = LOAD;
                 end
             end
@@ -160,15 +146,15 @@ module npu_controller (
             done_config_pixel_buffer_loader_flag <= 1'b0;
             done_config_weight_buffer_loader_flag <= 1'b0;
             done_config_activation_flag <= 1'b0;
-            done_config_ofm_flag <= 1'b0;
             done_config_maxpooling_flag <= 1'b0;
+            done_config_ofm_flag <= 1'b0;
 
             pixel_cfg_sent <= 1'b0;
             wgt_cfg_sent <= 1'b0;
             act_cfg_sent <= 1'b0;
-            ofm_cfg_sent <= 1'b0;
             start_calc_sent <= 1'b0;
             maxpooling_cfg_sent <= 1'b0;
+            ofm_cfg_sent <= 1'b0;
 
             window_cnt <= 3'd0; wgt_cnt <= 3'd0; bias_cnt <= 3'd0;
 
@@ -192,44 +178,18 @@ module npu_controller (
             pix_win_req <= 3'd0; pix_req_done <= 1'b0;
             wgt_req_cnt <= 8'd0; wgt_words_target <= 8'd0;
 
-            total_windows <= 16'd0;    
-            kernel_batch <= 16'd0;    
-            window_base <= 16'd0;   
-            win_in_batch_r <= 3'd0;     
-            batch_start_r <= 1'b0;   
-
-            done_npu_reg <= 1'b0;
-            ofm_granted <= 1'b0;
-            ofm_rd_addr_reg <= 16'd0;
-            ofm_rd_en_reg <= 1'b0;
+            npu_done_reg <= 1'b0;
         end
         else begin
             current_state <= next_state;
             clear_window_reg_r <= (current_state == CONFIG  && next_state == LOAD) || (current_state == COMPUTE && next_state == LOAD);
             clear_wgt_reg_r <= (current_state == COMPUTE) && done_calc && last_window_out_reg;
-            clear_bias_reg_r <= (current_state == COMPUTE) && done_calc && last_window_out_reg;
-            batch_start_r <= (current_state == LOAD && next_state == COMPUTE); 
-            if (current_state == LOAD && next_state == COMPUTE) begin            
-                win_in_batch_r <= pix_win_req;                                    
-            end                                                                    
-            if (current_state == COMPUTE && done_calc) begin                      
-                if (last_window_out_reg) begin                                    
-                    window_base <= 16'd0;                                        
-                    kernel_batch <= kernel_batch + 16'd1;                         
-                end                                                               
-                else begin                                                        
-                    window_base <= window_base + win_in_batch_r;                  
-                end                                                                
-            end                                                                   
+            clear_bias_reg_r <= (current_state == COMPUTE) && done_calc && last_window_out_reg;                                          
             if (current_state == CONFIG && next_state == LOAD) begin
                 wgt_batch_target  <= (number_kernel_reg > WEIGHT_COUNT) ? WEIGHT_COUNT[2:0] : number_kernel_reg[2:0];
                 wgt_words_target  <= ((number_kernel_reg > WEIGHT_COUNT) ? WEIGHT_COUNT[2:0] : number_kernel_reg[2:0])
                                       * (kernel_size_reg * kernel_size_reg);
                 number_kernel_reg <= (number_kernel_reg > WEIGHT_COUNT) ? number_kernel_reg - WEIGHT_COUNT : 16'd0;
-                total_windows <= (((img_width_reg - kernel_size_reg)/stride_reg)+16'd1) *      
-                                (((img_height_reg - kernel_size_reg)/stride_reg)+16'd1);      
-                kernel_batch  <= 16'd0;                                                          
-                window_base   <= 16'd0; 
                 pix_col <= 16'd0; pix_row <= 16'd0;
                 pix_win_req <= 3'd0; pix_req_done <= 1'b0;
                 window_cnt <= 3'd0; wgt_cnt <= 3'd0; wgt_req_cnt <= 8'd0; bias_cnt <= 3'd0;
@@ -272,27 +232,27 @@ module npu_controller (
             if (!pixel_cfg_sent) pixel_cfg_sent <= 1'b1;
             if (!wgt_cfg_sent) wgt_cfg_sent <= 1'b1;
             if (!act_cfg_sent) act_cfg_sent <= 1'b1;
-            if (!ofm_cfg_sent) ofm_cfg_sent <= 1'b1;
             if (!maxpooling_cfg_sent) maxpooling_cfg_sent <= 1'b1;
+            if (!ofm_cfg_sent) ofm_cfg_sent <= 1'b1;
 
             if (done_config_pixel_buffer_loader)  done_config_pixel_buffer_loader_flag  <= 1'b1;
             if (done_config_weight_buffer_loader) done_config_weight_buffer_loader_flag <= 1'b1;
             if (done_config_activation) done_config_activation_flag <= 1'b1;
-            if (done_config_ofm) done_config_ofm_flag <= 1'b1;
             if (done_config_maxpooling) done_config_maxpooling_flag <= 1'b1;
+            if (done_config_ofm) done_config_ofm_flag <= 1'b1;
         end
         else begin
             pixel_cfg_sent <= 1'b0;
             wgt_cfg_sent <= 1'b0;
             act_cfg_sent <= 1'b0;
-            ofm_cfg_sent <= 1'b0;
             maxpooling_cfg_sent <= 1'b0;
+            ofm_cfg_sent <= 1'b0;
 
             done_config_pixel_buffer_loader_flag <= 1'b0;
             done_config_weight_buffer_loader_flag <= 1'b0;
             done_config_activation_flag <= 1'b0;
-            done_config_ofm_flag <= 1'b0;
             done_config_maxpooling_flag <= 1'b0;
+            done_config_ofm_flag <= 1'b0;
         end
 
         if (current_state == LOAD) begin
@@ -342,26 +302,8 @@ module npu_controller (
             start_calc_sent <= 1'b0;  
         end
 
-        if(current_state==DONE) done_npu_reg <= 1'b1;
-        else done_npu_reg <= 1'b0;
-
-        if (current_state != DONE) begin
-            ofm_granted     <= 1'b0;
-            ofm_rd_addr_reg <= 16'd0;
-            ofm_rd_en_reg   <= 1'b0;
-        end
-        else begin
-            if (ofm_grant) ofm_granted <= 1'b1;
-            if (ofm_granted || ofm_grant) begin
-                if (ofm_rd_addr_reg < (kernel_batch * total_windows)) begin
-                    ofm_rd_en_reg   <= 1'b1;
-                    ofm_rd_addr_reg <= ofm_rd_addr_reg + 16'd1;
-                end
-                else begin
-                    ofm_rd_en_reg <= 1'b0;
-                end
-            end
-        end
+        if (current_state == DONE) npu_done_reg <= 1'b1;
+        else npu_done_reg <= 1'b0;
     end
 
     //Output logic
@@ -377,8 +319,8 @@ module npu_controller (
     assign start_config_pixel_buffer_loader  = (current_state == CONFIG && !pixel_cfg_sent) ? 1'b1 : 1'b0;
     assign start_config_weight_buffer_loader = (current_state == CONFIG && !wgt_cfg_sent) ? 1'b1 : 1'b0;
     assign start_config_activation = (current_state == CONFIG && !act_cfg_sent) ? 1'b1 : 1'b0;
-    assign start_config_ofm = (current_state == CONFIG && !ofm_cfg_sent) ? 1'b1 : 1'b0;
     assign start_config_maxpooling = (current_state == CONFIG && !maxpooling_cfg_sent) ? 1'b1 : 1'b0;
+    assign start_config_ofm = (current_state == CONFIG && !ofm_cfg_sent) ? 1'b1 : 1'b0;
 
     assign rd_addr_pixel = (current_state == LOAD) ? rd_addr_pixel_reg : 14'd0;
     assign rd_addr_wgt = (current_state == LOAD) ? rd_addr_wgt_reg : 14'd0;
@@ -395,11 +337,5 @@ module npu_controller (
     assign clear_wgt_reg = clear_wgt_reg_r;
     assign clear_bias_reg = clear_bias_reg_r;
 
-    assign ofm_base_addr = kernel_batch * total_windows + window_base;   
-    assign win_in_batch  = win_in_batch_r;                               
-    assign batch_start   = batch_start_r; 
-
-    assign done_npu = done_npu_reg;  
-    assign ofm_rd_addr = ofm_rd_addr_reg;
-    assign ofm_rd_en = ofm_rd_en_reg;                              
+    assign npu_done = npu_done_reg;
 endmodule

@@ -60,11 +60,10 @@ module top #(
     output [2:0] lane_count_monitor,
 
     output start_config_pixel_buffer_loader_monitor, start_config_weight_buffer_loader_monitor,
-    output start_config_activation_monitor, start_config_ofm_monitor,
-    output start_config_maxpooling_monitor,
+    output start_config_activation_monitor, start_config_maxpooling_monitor, start_config_ofm_monitor,
 
     output done_config_pixel_buffer_loader_monitor, done_config_weight_buffer_loader_monitor, done_config_activation_monitor,
-    output done_config_maxpooling_monitor,
+    output done_config_maxpooling_monitor, 
     input done_config_ofm,
 
     output rd_en_pixel_monitor, rd_en_wgt_monitor, rd_en_bias_monitor,
@@ -111,9 +110,7 @@ module top #(
     output signed [23:0] maxpooling_result0_monitor, maxpooling_result1_monitor, maxpooling_result2_monitor, maxpooling_result3_monitor, maxpooling_result4_monitor,
     output valid_maxpooling_result0_monitor, valid_maxpooling_result1_monitor, valid_maxpooling_result2_monitor, valid_maxpooling_result3_monitor, valid_maxpooling_result4_monitor,
 
-    output [15:0] ofm_base_addr_monitor,
-    output [2:0] win_in_batch_monitor,
-    output batch_start_monitor
+    output npu_done_monitor
 );
     //System Controller
     wire start_load, start_npu;
@@ -124,11 +121,14 @@ module top #(
     assign ifm_done_monitor  = ifm_done;
     assign wgt_done_monitor  = wgt_done;
     assign bias_done_monitor = bias_done;
+
+    wire npu_done;
  
     system_controller system_controller_inst (
         .clk(clk), .rst(rst), .start(start_system),
         .ifm_done(ifm_done), .wgt_done(wgt_done), .bias_done(bias_done),
-        .start_load(start_load), .start_npu(start_npu)
+        .start_load(start_load), .start_npu(start_npu),
+        .done_npu(npu_done)
     );
  
     //Axi Unpack
@@ -198,13 +198,14 @@ module top #(
     assign lane_count_monitor = lane_count;
 
     wire start_config_pixel_buffer_loader, start_config_weight_buffer_loader;
-    wire start_config_activation, start_config_ofm, start_config_maxpooling;
+    wire start_config_activation, start_config_maxpooling;
+    wire start_config_ofm;
 
     assign start_config_pixel_buffer_loader_monitor = start_config_pixel_buffer_loader;
     assign start_config_weight_buffer_loader_monitor = start_config_weight_buffer_loader;
     assign start_config_activation_monitor = start_config_activation;
-    assign start_config_ofm_monitor = start_config_ofm;
     assign start_config_maxpooling_monitor = start_config_maxpooling;
+    assign start_config_ofm_monitor = start_config_ofm; 
 
     wire done_config_pixel_buffer_loader, done_config_weight_buffer_loader, done_config_activation;
     wire done_config_maxpooling;
@@ -234,7 +235,7 @@ module top #(
     wire done_calc;
     assign done_calc_monitor = done_calc;
     assign start_calc_monitor = start_calc;
-    wire clear_window_reg, clear_wgt_reg;
+    wire clear_window_reg, clear_wgt_reg, clear_bias_reg;
     assign clear_window_reg_monitor = clear_window_reg;
     assign clear_wgt_reg_monitor = clear_wgt_reg;
     assign clear_bias_reg_monitor = clear_bias_reg;
@@ -249,60 +250,54 @@ module top #(
     assign valid_wgt_out_monitor = valid_wgt_out;
     assign last_window_out_monitor = last_window_out;
 
-    wire [15:0] ofm_base_addr;
-    wire [2:0] win_in_batch;
-    wire batch_start;
-    assign ofm_base_addr_monitor = ofm_base_addr;
-    assign win_in_batch_monitor = win_in_batch;
-    assign batch_start_monitor = batch_start;
+    assign npu_done_monitor = npu_done;
 
     npu_controller npu_controller_inst(
         .clk(clk), .rst(rst), .start_npu(start_npu),
         .current_state_monitor(current_state_monitor),
-
+ 
         .img_width(img_width), .img_height(img_height),
         .kernel_size(kernel_size), .stride(stride),
         .activation(activation),
         .number_kernel(number_kernel),
         .pool_size(pool_size), .pool_stride(pool_stride),
         .en_maxpooling(en_maxpooling),
-
+ 
         .img_width_config(img_width_config), .img_height_config(img_height_config),
         .kernel_size_config(kernel_size_config), .stride_config(stride_config),
         .activation_config(activation_config),
         .number_kernel_monitor(number_kernel_config),
         .pool_size_config(pool_size_config), .pool_stride_config(pool_stride_config),
         .en_maxpooling_config(en_maxpooling_config),
-
+ 
         .start_config_pixel_buffer_loader(start_config_pixel_buffer_loader), .start_config_weight_buffer_loader(start_config_weight_buffer_loader),
-        .start_config_activation(start_config_activation), .start_config_ofm(start_config_ofm),
-        .start_config_maxpooling(start_config_maxpooling),
-
+        .start_config_activation(start_config_activation), .start_config_maxpooling(start_config_maxpooling),
+        .start_config_ofm(start_config_ofm),                      
+ 
         .done_config_pixel_buffer_loader(done_config_pixel_buffer_loader), .done_config_weight_buffer_loader(done_config_weight_buffer_loader),
-        .done_config_activation(done_config_activation), .done_config_ofm(done_config_ofm),
-        .done_config_maxpooling(done_config_maxpooling),
-
+        .done_config_activation(done_config_activation), .done_config_maxpooling(done_config_maxpooling),
+        .done_config_ofm(done_config_ofm),                        
+ 
         .rd_en_pixel(rd_en_pixel), 
         .rd_addr_pixel(rd_addr_pixel), 
         .rd_en_wgt(rd_en_wgt), 
         .rd_addr_wgt(rd_addr_wgt), 
         .rd_en_bias(rd_en_bias), 
         .rd_addr_bias(rd_addr_bias), 
-
+ 
         .valid_pixel(valid_pixel), .valid_wgt(valid_wgt), .valid_bias(valid_bias),
-
+ 
         .start_calc(start_calc),
         .clear_window_reg(clear_window_reg), .clear_wgt_reg(clear_wgt_reg), .clear_bias_reg(clear_bias_reg),
         .done_calc(done_calc),
-
+ 
         .valid_window_out(valid_window_out), .valid_wgt_out(valid_wgt_out),
         .last_window_out(last_window_out),
         .lane_count(lane_count),
-
+ 
         .window_cnt_monitor(window_cnt_monitor), .wgt_cnt_monitor(wgt_cnt_monitor), .bias_cnt_monitor(bias_cnt_monitor),
-        .ofm_base_addr(ofm_base_addr),
-        .win_in_batch(win_in_batch),
-        .batch_start(batch_start)
+        
+        .npu_done(npu_done)
     );
 
     //On chip Memory
@@ -627,19 +622,5 @@ module top #(
     );
 
     //OFM
-    //OFM
-    ofm_unit #(.DW(24), .AW(16), .DEPTH(65536)) ofm_unit_inst (
-        .clk(clk), .rst(rst), .batch_start(batch_start),
-        .lane_count(lane_count), .win_in_batch(win_in_batch),
-        .base_addr(ofm_base_addr),
-
-        .d0(maxpooling_result0), .d1(maxpooling_result1), .d2(maxpooling_result2),
-        .d3(maxpooling_result3), .d4(maxpooling_result4),
-        .v0(valid_maxpooling_result0), .v1(valid_maxpooling_result1), .v2(valid_maxpooling_result2),
-        .v3(valid_maxpooling_result3), .v4(valid_maxpooling_result4),
-
-        .rd_en(),
-        .rd_addr0(), .rd_addr1(), .rd_addr2(), .rd_addr3(), .rd_addr4(),
-        .rd_data0(), .rd_data1(), .rd_data2(), .rd_data3(), .rd_data4()
-    );
+    
 endmodule

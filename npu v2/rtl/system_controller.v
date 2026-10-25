@@ -12,14 +12,12 @@ module system_controller(
 
     output reg start_load,
     output reg start_npu,
-    input wire done_npu,
-    output reg ofm_grant
+    input wire done_npu
 );
 
     localparam IDLE    = 2'd0;
     localparam LOAD    = 2'd1;
     localparam COMPUTE = 2'd2;
-    localparam WRITE_OFM = 2'd3;
 
     reg [1:0] state;
 
@@ -80,16 +78,11 @@ module system_controller(
 
                 COMPUTE: begin
                     if (done_npu) begin
-                        state <= WRITE_OFM;
+                        ifm_done_reg  <= 0;
+                        wgt_done_reg  <= 0;
+                        bias_done_reg <= 0;
+                        state <= IDLE;
                     end
-                end
-
-                WRITE_OFM: begin                       
-                    ofm_grant <= 1;                      
-                    ifm_done_reg  <= 0;
-                    wgt_done_reg  <= 0;
-                    bias_done_reg <= 0;
-                    state <= IDLE;                     
                 end
 
                 default: begin
