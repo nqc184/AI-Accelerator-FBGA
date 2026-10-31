@@ -23,27 +23,18 @@ module top #(
     input  wire ifm_tvalid,
     input  wire ifm_tlast,
     output wire ifm_tready,
-    output ifm_unpack_en_monitor,
-    output [IFM_ADDR_WIDTH-1:0] ifm_unpack_wr_addr_monitor,
-    output [DATA_WIDTH-1:0] ifm_unpack_data_monitor,
  
     // AXI Stream WGT
     input  wire [AXI_BURST-1:0] wgt_tdata,
     input  wire wgt_tvalid,
     input  wire wgt_tlast,
     output wire wgt_tready,
-    output wgt_unpack_en_monitor,
-    output [WGT_ADDR_WIDTH-1:0] wgt_unpack_wr_addr_monitor,
-    output [DATA_WIDTH-1:0] wgt_unpack_data_monitor,
  
     // AXI Stream BIAS
     input  wire [AXI_BURST-1:0] bias_tdata,
     input  wire bias_tvalid,
     input  wire bias_tlast,
     output wire bias_tready,
-    output bias_unpack_en_monitor,
-    output [BIAS_ADDR_WIDTH-1:0] bias_unpack_wr_addr_monitor,
-    output [(DATA_WIDTH*2)-1:0] bias_unpack_data_monitor,
 
     input [15:0] img_width, img_height,
     input [2:0] kernel_size, stride,
@@ -51,78 +42,16 @@ module top #(
     input [15:0] number_kernel,
     input [1:0] pool_size, pool_stride,
     input en_maxpooling,
-    output [15:0] img_width_config_monitor, img_height_config_monitor,
-    output [2:0] kernel_size_config_monitor, stride_config_monitor,
-    output [1:0] activation_config_monitor,
-    output [15:0] number_kernel_config_monitor,
-    output [1:0] pool_size_config_monitor, pool_stride_config_monitor,
-    output en_maxpooling_config_monitor,
-    output [2:0] lane_count_monitor,
 
-    output start_config_pixel_buffer_loader_monitor, start_config_weight_buffer_loader_monitor,
-    output start_config_activation_monitor, start_config_maxpooling_monitor, start_config_ofm_monitor,
-
-    output done_config_pixel_buffer_loader_monitor, done_config_weight_buffer_loader_monitor, done_config_activation_monitor,
-    output done_config_maxpooling_monitor, 
-    input done_config_ofm,
-
-    output rd_en_pixel_monitor, rd_en_wgt_monitor, rd_en_bias_monitor,
-    output valid_pixel_monitor, valid_wgt_monitor, valid_bias_monitor, 
-    output signed [DATA_WIDTH-1:0] rd_data_pixel_monitor, rd_data_wgt_monitor,
-    output signed [(DATA_WIDTH*2)-1:0] rd_data_bias_monitor,
-    output [IFM_ADDR_WIDTH-1:0] rd_addr_pixel_monitor,
-    output [WGT_ADDR_WIDTH-1:0] rd_addr_wgt_monitor,
-    output [BIAS_ADDR_WIDTH-1:0] rd_addr_bias_monitor,
-
-    output start_calc_monitor,
-    output done_calc_monitor,
-    output clear_window_reg_monitor, clear_wgt_reg_monitor, clear_bias_reg_monitor,
-    output valid_window_out_monitor, valid_wgt_out_monitor, last_window_out_monitor,
-    output [599:0] window_packed_monitor, weight_packed_monitor,
-    output [599:0] window_reg_0, window_reg_1, window_reg_2, window_reg_3, window_reg_4,
-    output [599:0] wgt_reg_0, wgt_reg_1, wgt_reg_2, wgt_reg_3, wgt_reg_4,
-    output signed [47:0] bias_reg_0, bias_reg_1, bias_reg_2, bias_reg_3, bias_reg_4,
-    output [2:0] window_cnt_monitor, wgt_cnt_monitor, bias_cnt_monitor,
-
-    output [5:0] cycle_out_monitor,
-    output signed [DATA_WIDTH-1:0] a1_monitor, a2_monitor, a3_monitor, a4_monitor, a5_monitor,
-    output signed [DATA_WIDTH-1:0] b1_monitor, b2_monitor, b3_monitor, b4_monitor, b5_monitor,
-    
-    output signed [47:0] c1_monitor, c2_monitor, c3_monitor, c4_monitor, c5_monitor,
-    output signed [47:0] c6_monitor, c7_monitor, c8_monitor, c9_monitor, c10_monitor,
-    output signed [47:0] c11_monitor, c12_monitor, c13_monitor, c14_monitor, c15_monitor,
-    output signed [47:0] c16_monitor, c17_monitor, c18_monitor, c19_monitor, c20_monitor,
-    output signed [47:0] c21_monitor, c22_monitor, c23_monitor, c24_monitor, c25_monitor,
-
-    output signed [47:0] col1_out_monitor, col2_out_monitor, col3_out_monitor, col4_out_monitor, col5_out_monitor,
-    output col1_valid_monitor, col2_valid_monitor, col3_valid_monitor, col4_valid_monitor, col5_valid_monitor,
-
-    output signed [47:0] bias_reg0_monitor, bias_reg1_monitor, bias_reg2_monitor, bias_reg3_monitor, bias_reg4_monitor,
-    output signed [47:0] bias_adder_result0_monitor, bias_adder_result1_monitor, bias_adder_result2_monitor, bias_adder_result3_monitor, bias_adder_result4_monitor,
-    output valid_bias_adder_result0_monitor, valid_bias_adder_result1_monitor, valid_bias_adder_result2_monitor, valid_bias_adder_result3_monitor, valid_bias_adder_result4_monitor,
-    
-    output signed [47:0] activation_result0_monitor, activation_result1_monitor, activation_result2_monitor, activation_result3_monitor, activation_result4_monitor,
-    output valid_activation_result0_monitor, valid_activation_result1_monitor, valid_activation_result2_monitor, valid_activation_result3_monitor, valid_activation_result4_monitor,
-
-    output signed [23:0] quantization_result0_monitor, quantization_result1_monitor, quantization_result2_monitor, quantization_result3_monitor, quantization_result4_monitor,
-    output valid_quantization_result0_monitor, valid_quantization_result1_monitor, valid_quantization_result2_monitor, valid_quantization_result3_monitor, valid_quantization_result4_monitor,
-
-    output signed [23:0] maxpooling_result0_monitor, maxpooling_result1_monitor, maxpooling_result2_monitor, maxpooling_result3_monitor, maxpooling_result4_monitor,
-    output valid_maxpooling_result0_monitor, valid_maxpooling_result1_monitor, valid_maxpooling_result2_monitor, valid_maxpooling_result3_monitor, valid_maxpooling_result4_monitor,
-
-    output npu_done_monitor
+    output read_start_monitor, read_done_monitor, write_done_monitor,
+    output npu_done
 );
     //System Controller
     wire start_load, start_npu;
     assign start_load_monitor = start_load;
-    assign start_npu_monitor  = start_npu;
+    assign start_npu_monitor = start_npu;
  
     wire ifm_done, wgt_done, bias_done;
-    assign ifm_done_monitor  = ifm_done;
-    assign wgt_done_monitor  = wgt_done;
-    assign bias_done_monitor = bias_done;
-
-    wire npu_done;
  
     system_controller system_controller_inst (
         .clk(clk), .rst(rst), .start(start_system),
@@ -135,23 +64,14 @@ module top #(
     wire ifm_unpack_wr_en;
     wire [IFM_ADDR_WIDTH-1:0] ifm_unpack_wr_addr;
     wire signed [DATA_WIDTH-1:0] ifm_unpack_wr_data;
-    assign ifm_unpack_en_monitor   = ifm_unpack_wr_en;
-    assign ifm_unpack_data_monitor = ifm_unpack_wr_data;
-    assign ifm_unpack_wr_addr_monitor = ifm_unpack_wr_addr;
  
     wire wgt_unpack_wr_en;
     wire [WGT_ADDR_WIDTH-1:0] wgt_unpack_wr_addr;
     wire signed [DATA_WIDTH-1:0] wgt_unpack_wr_data;
-    assign wgt_unpack_en_monitor   = wgt_unpack_wr_en;
-    assign wgt_unpack_data_monitor = wgt_unpack_wr_data;
-    assign wgt_unpack_wr_addr_monitor = wgt_unpack_wr_addr;
  
     wire bias_unpack_wr_en;
     wire [BIAS_ADDR_WIDTH-1:0] bias_unpack_wr_addr;
     wire signed [(DATA_WIDTH*2)-1:0] bias_unpack_wr_data;
-    assign bias_unpack_en_monitor   = bias_unpack_wr_en;
-    assign bias_unpack_data_monitor = bias_unpack_wr_data;
-    assign bias_unpack_wr_addr_monitor = bias_unpack_wr_addr;
  
     axi_unpack_writer #(.DATA_WIDTH(DATA_WIDTH), .ADDR_WIDTH(IFM_ADDR_WIDTH)) uw_ifm (
         .clk(clk), .rst(rst),
@@ -186,33 +106,12 @@ module top #(
     wire en_maxpooling_config;
     wire [2:0] lane_count;
 
-    assign img_width_config_monitor = img_width_config;
-    assign img_height_config_monitor = img_height_config;
-    assign kernel_size_config_monitor = kernel_size_config;
-    assign stride_config_monitor = stride_config;
-    assign activation_config_monitor = activation_config;
-    assign number_kernel_config_monitor = number_kernel_config;
-    assign pool_size_config_monitor = pool_size_config;
-    assign pool_stride_config_monitor = pool_stride_config;
-    assign en_maxpooling_config_monitor = en_maxpooling_config;
-    assign lane_count_monitor = lane_count;
-
     wire start_config_pixel_buffer_loader, start_config_weight_buffer_loader;
     wire start_config_activation, start_config_maxpooling;
     wire start_config_ofm;
 
-    assign start_config_pixel_buffer_loader_monitor = start_config_pixel_buffer_loader;
-    assign start_config_weight_buffer_loader_monitor = start_config_weight_buffer_loader;
-    assign start_config_activation_monitor = start_config_activation;
-    assign start_config_maxpooling_monitor = start_config_maxpooling;
-    assign start_config_ofm_monitor = start_config_ofm; 
-
     wire done_config_pixel_buffer_loader, done_config_weight_buffer_loader, done_config_activation;
-    wire done_config_maxpooling;
-    assign done_config_pixel_buffer_loader_monitor = done_config_pixel_buffer_loader;
-    assign done_config_weight_buffer_loader_monitor = done_config_weight_buffer_loader;
-    assign done_config_activation_monitor = done_config_activation;
-    assign done_config_maxpooling_monitor = done_config_maxpooling;
+    wire done_config_maxpooling, done_config_ofm;
 
     wire rd_en_pixel, rd_en_wgt, rd_en_bias;
     wire signed [DATA_WIDTH-1:0] rd_data_pixel, rd_data_wgt;
@@ -221,37 +120,17 @@ module top #(
     wire [WGT_ADDR_WIDTH-1:0] rd_addr_wgt;
     wire [BIAS_ADDR_WIDTH-1:0] rd_addr_bias;
 
-    assign rd_en_pixel_monitor = rd_en_pixel; 
-    assign rd_en_wgt_monitor = rd_en_wgt; 
-    assign rd_en_bias_monitor = rd_en_bias;
-    assign rd_data_pixel_monitor = rd_data_pixel; 
-    assign rd_data_wgt_monitor = rd_data_wgt; 
-    assign rd_data_bias_monitor = rd_data_bias;
-    assign rd_addr_pixel_monitor = rd_addr_pixel;
-    assign rd_addr_wgt_monitor = rd_addr_wgt;
-    assign rd_addr_bias_monitor = rd_addr_bias;
-
     wire start_calc;
     wire done_calc;
-    assign done_calc_monitor = done_calc;
-    assign start_calc_monitor = start_calc;
     wire clear_window_reg, clear_wgt_reg, clear_bias_reg;
-    assign clear_window_reg_monitor = clear_window_reg;
-    assign clear_wgt_reg_monitor = clear_wgt_reg;
-    assign clear_bias_reg_monitor = clear_bias_reg;
 
     wire valid_pixel, valid_wgt, valid_bias;
-    assign valid_pixel_monitor = valid_pixel;
-    assign valid_wgt_monitor = valid_wgt;
-    assign valid_bias_monitor = valid_bias;
 
     wire valid_window_out, valid_wgt_out, last_window_out;
-    assign valid_window_out_monitor = valid_window_out;
-    assign valid_wgt_out_monitor = valid_wgt_out;
-    assign last_window_out_monitor = last_window_out;
-
-    assign npu_done_monitor = npu_done;
-
+    wire read_start, read_done, write_done;
+    assign read_start_monitor = read_start;
+    assign read_done_monitor = read_done; 
+    assign write_done_monitor = write_done;
     npu_controller npu_controller_inst(
         .clk(clk), .rst(rst), .start_npu(start_npu),
         .current_state_monitor(current_state_monitor),
@@ -296,7 +175,9 @@ module top #(
         .lane_count(lane_count),
  
         .window_cnt_monitor(window_cnt_monitor), .wgt_cnt_monitor(wgt_cnt_monitor), .bias_cnt_monitor(bias_cnt_monitor),
-        
+        .read_start(read_start),
+        .write_done(write_done),
+        .read_done(read_done),
         .npu_done(npu_done)
     );
 
@@ -324,7 +205,6 @@ module top #(
 
     //Pixel Loader 
     wire [599:0] window_packed;
-    assign window_packed_monitor = window_packed;
     pixel_loader #(
         .DW(24), .MAX_W(128), .K(5)
     )pixel_stream_buffer_inst(
@@ -342,7 +222,6 @@ module top #(
 
     //Weight Loader
     wire [599:0] weight_packed;
-    assign weight_packed_monitor = weight_packed;
     weight_loader #(
         .DW(24),
         .MAX_K(5)
@@ -357,12 +236,6 @@ module top #(
 
     //Reg 5x600 for Window
     wire [599:0] window_0, window_1, window_2, window_3, window_4;
-    assign window_reg_0 = window_0;
-    assign window_reg_1 = window_1;
-    assign window_reg_2 = window_2;
-    assign window_reg_3 = window_3;
-    assign window_reg_4 = window_4;
-
     reg_file_5x600 window_reg_file(
         .clk(clk), .rst(rst), .clr(clear_window_reg),
 
@@ -375,11 +248,6 @@ module top #(
 
     //Reg 5x600 for Weight
     wire [599:0] wgt_reg [4:0];
-    assign wgt_reg_0 = wgt_reg[0];
-    assign wgt_reg_1 = wgt_reg[1];
-    assign wgt_reg_2 = wgt_reg[2];
-    assign wgt_reg_3 = wgt_reg[3];
-    assign wgt_reg_4 = wgt_reg[4];
     reg_file_5x600 weigh_reg_file(
         .clk(clk), .rst(rst), .clr(clear_wgt_reg),
 
@@ -401,61 +269,8 @@ module top #(
     wire [47:0] c16, c17, c18, c19, c20;
     wire [47:0] c21, c22, c23, c24, c25;
 
-    assign cycle_out_monitor = cycle_out;
-    assign a1_monitor = a1;
-    assign a2_monitor = a2;
-    assign a3_monitor = a3;
-    assign a4_monitor = a4;
-    assign a5_monitor = a5;
-    assign b1_monitor = b1;
-    assign b2_monitor = b2;
-    assign b3_monitor = b3;
-    assign b4_monitor = b4;
-    assign b5_monitor = b5;
-    
-    assign c1_monitor  = c1;
-    assign c2_monitor  = c2;
-    assign c3_monitor  = c3;
-    assign c4_monitor  = c4;
-    assign c5_monitor  = c5;
-
-    assign c6_monitor  = c6;
-    assign c7_monitor  = c7;
-    assign c8_monitor  = c8;
-    assign c9_monitor  = c9;
-    assign c10_monitor = c10;
-
-    assign c11_monitor = c11;
-    assign c12_monitor = c12;
-    assign c13_monitor = c13;
-    assign c14_monitor = c14;
-    assign c15_monitor = c15;
-
-    assign c16_monitor = c16;
-    assign c17_monitor = c17;
-    assign c18_monitor = c18;
-    assign c19_monitor = c19;
-    assign c20_monitor = c20;
-
-    assign c21_monitor = c21;
-    assign c22_monitor = c22;
-    assign c23_monitor = c23;
-    assign c24_monitor = c24;
-    assign c25_monitor = c25;
-
     wire signed [47:0] col1_out, col2_out, col3_out, col4_out, col5_out;
     wire col1_valid, col2_valid, col3_valid, col4_valid, col5_valid;
-    assign col1_out_monitor = col1_out;
-    assign col2_out_monitor = col2_out;
-    assign col3_out_monitor = col3_out;
-    assign col4_out_monitor = col4_out;
-    assign col5_out_monitor = col5_out;
-
-    assign col1_valid_monitor = col1_valid;
-    assign col2_valid_monitor = col2_valid;
-    assign col3_valid_monitor = col3_valid;
-    assign col4_valid_monitor = col4_valid;
-    assign col5_valid_monitor = col5_valid;
 
     calc_unit #(.DW(24)
     )calc_unit_inst(
@@ -484,16 +299,6 @@ module top #(
     //Bias Adder 5x48
     wire signed [47:0] bias_adder_result0, bias_adder_result1, bias_adder_result2, bias_adder_result3, bias_adder_result4;
     wire valid_bias_adder_result0, valid_bias_adder_result1, valid_bias_adder_result2, valid_bias_adder_result3, valid_bias_adder_result4;
-    assign bias_adder_result0_monitor = bias_adder_result0;
-    assign bias_adder_result1_monitor = bias_adder_result1;
-    assign bias_adder_result2_monitor = bias_adder_result2;
-    assign bias_adder_result3_monitor = bias_adder_result3;
-    assign bias_adder_result4_monitor = bias_adder_result4;
-    assign valid_bias_adder_result0_monitor = valid_bias_adder_result0;
-    assign valid_bias_adder_result1_monitor = valid_bias_adder_result1;
-    assign valid_bias_adder_result2_monitor = valid_bias_adder_result2;
-    assign valid_bias_adder_result3_monitor = valid_bias_adder_result3;
-    assign valid_bias_adder_result4_monitor = valid_bias_adder_result4;
     bias_adder_unit bias_adder_unit_inst (
         .clk(clk),
         .rst(rst),
@@ -516,16 +321,6 @@ module top #(
     //Activation
     wire [47:0] activation_result0, activation_result1, activation_result2, activation_result3, activation_result4;
     wire valid_activation_result0, valid_activation_result1, valid_activation_result2, valid_activation_result3, valid_activation_result4;
-    assign activation_result0_monitor = activation_result0;
-    assign activation_result1_monitor = activation_result1;
-    assign activation_result2_monitor = activation_result2;
-    assign activation_result3_monitor = activation_result3;
-    assign activation_result4_monitor = activation_result4;
-    assign valid_activation_result0_monitor = valid_activation_result0;
-    assign valid_activation_result1_monitor = valid_activation_result1;
-    assign valid_activation_result2_monitor = valid_activation_result2;
-    assign valid_activation_result3_monitor = valid_activation_result3;
-    assign valid_activation_result4_monitor = valid_activation_result4;
     activation_5x #(
         .DATA_WIDTH(48),
         .LEAK_SHIFT(4)
@@ -558,16 +353,6 @@ module top #(
     //Quantization
     wire signed [23:0] quantization_result0, quantization_result1, quantization_result2, quantization_result3, quantization_result4;
     wire valid_quantization_result0, valid_quantization_result1, valid_quantization_result2, valid_quantization_result3, valid_quantization_result4;
-    assign quantization_result0_monitor = quantization_result0;
-    assign quantization_result1_monitor = quantization_result1;
-    assign quantization_result2_monitor = quantization_result2;
-    assign quantization_result3_monitor = quantization_result3;
-    assign quantization_result4_monitor = quantization_result4;
-    assign valid_quantization_result0_monitor = valid_quantization_result0;
-    assign valid_quantization_result1_monitor = valid_quantization_result1;
-    assign valid_quantization_result2_monitor = valid_quantization_result2;
-    assign valid_quantization_result3_monitor = valid_quantization_result3;
-    assign valid_quantization_result4_monitor = valid_quantization_result4;
     quantization_5x #(
         .DATA_IN_WIDTH(48),
         .DATA_OUT_WIDTH(24)
@@ -585,16 +370,6 @@ module top #(
     //Maxpooling
     wire signed [23:0] maxpooling_result0, maxpooling_result1, maxpooling_result2, maxpooling_result3, maxpooling_result4;
     wire valid_maxpooling_result0, valid_maxpooling_result1, valid_maxpooling_result2, valid_maxpooling_result3, valid_maxpooling_result4;
-    assign maxpooling_result0_monitor = maxpooling_result0;
-    assign maxpooling_result1_monitor = maxpooling_result1;
-    assign maxpooling_result2_monitor = maxpooling_result2;
-    assign maxpooling_result3_monitor = maxpooling_result3;
-    assign maxpooling_result4_monitor = maxpooling_result4;
-    assign valid_maxpooling_result0_monitor = valid_maxpooling_result0;
-    assign valid_maxpooling_result1_monitor = valid_maxpooling_result1;
-    assign valid_maxpooling_result2_monitor = valid_maxpooling_result2;
-    assign valid_maxpooling_result3_monitor = valid_maxpooling_result3;
-    assign valid_maxpooling_result4_monitor = valid_maxpooling_result4;
     maxpooling_unit#(
         .DATA_WIDTH(24),
         .MAX_POOL(3),
@@ -622,5 +397,36 @@ module top #(
     );
 
     //OFM
-    
+    wire [15:0] ofm_w = (img_width_config  - kernel_size_config) / stride_config + 16'd1;
+    wire [15:0] ofm_h = (img_height_config - kernel_size_config) / stride_config + 16'd1;
+    wire [23:0] data_out;
+    wire valid_out;
+    wire [31:0] addr_out;
+    wire overflow;
+    ofm #(
+        .DATA_WIDTH(24),
+        .MAX_IMG_WIDTH(128),
+        .MAX_KERNELS(128)
+    )ofm_inst(
+        .clk(clk), .rst(rst),
+        .data_in0(quantization_result0), .data_in1(quantization_result1), 
+        .data_in2(quantization_result2), .data_in3(quantization_result3), 
+        .data_in4(quantization_result4),
+        .valid_in0(valid_quantization_result0), .valid_in1(valid_quantization_result1), 
+        .valid_in2(valid_quantization_result2), .valid_in3(valid_quantization_result3), 
+        .valid_in4(valid_quantization_result4),
+        .config_start(start_config_ofm),
+        .img_width(ofm_w),
+        .img_height(ofm_h),
+        .num_kernels(number_kernel_config),
+        .config_done(done_config_ofm),
+        .write_done(write_done),
+        .read_start(read_start),
+        .data_out(),
+        .valid_out(),
+        .kernel_out(),
+        .addr_out(),
+        .read_done(read_done),
+        .overflow()
+    );
 endmodule

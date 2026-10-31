@@ -42,13 +42,15 @@ module npu_controller (
 
     output [2:0] window_cnt_monitor, wgt_cnt_monitor, bias_cnt_monitor,
 
-    output npu_done
+    input write_done, read_done,
+    output read_start, npu_done
 );
     localparam IDLE = 3'd0;
     localparam CONFIG = 3'd1;
     localparam LOAD = 3'd2;
     localparam COMPUTE = 3'd3;
-    localparam DONE = 3'd4;
+    localparam WAIT_DONE = 3'd4;
+    localparam DONE = 3'd5;
 
     localparam WINDOW_COUNT = 5;
     localparam WEIGHT_COUNT = 5;  
@@ -101,7 +103,7 @@ module npu_controller (
     assign rd_en_wgt = (current_state == LOAD) && (wgt_req_cnt < wgt_words_target);
     assign rd_en_bias = (current_state == LOAD) && (bias_cnt < wgt_batch_target);
 
-    reg npu_done_reg;
+    reg read_start_reg, npu_done_reg;
     //Combinational logic (next state)
     always @(*) begin
         next_state = current_state;
@@ -126,12 +128,15 @@ module npu_controller (
             COMPUTE: begin
                 if (done_calc) begin
                     if (last_window_out_reg) begin
-                        next_state = (number_kernel_reg != 0) ? LOAD : DONE;
+                        next_state = (number_kernel_reg != 0) ? LOAD : WAIT_DONE;
                     end
                     else begin
                         next_state = LOAD;
                     end
                 end
+            end
+            WAIT_DONE: begin
+                if (write_done) next_state = DONE;
             end
             DONE: begin
                 next_state = IDLE;
@@ -179,6 +184,7 @@ module npu_controller (
             wgt_req_cnt <= 8'd0; wgt_words_target <= 8'd0;
 
             npu_done_reg <= 1'b0;
+            read_start_reg <= 1'b0;
         end
         else begin
             current_state <= next_state;
@@ -215,7 +221,6 @@ module npu_controller (
                     number_kernel_reg <= (number_kernel_reg > WEIGHT_COUNT) ? number_kernel_reg - WEIGHT_COUNT : 16'd0;
                 end
             end
-        end
 
         if (current_state == IDLE) begin
             if (start_npu) begin
@@ -302,8 +307,11 @@ module npu_controller (
             start_calc_sent <= 1'b0;  
         end
 
-        if (current_state == DONE) npu_done_reg <= 1'b1;
+        if (current_state == DONE) begin 
+            npu_done_reg <= 1'b1;
+        end
         else npu_done_reg <= 1'b0;
+        end
     end
 
     //Output logic
@@ -337,5 +345,6 @@ module npu_controller (
     assign clear_wgt_reg = clear_wgt_reg_r;
     assign clear_bias_reg = clear_bias_reg_r;
 
+    assign read_start = read_start_reg;
     assign npu_done = npu_done_reg;
 endmodule
